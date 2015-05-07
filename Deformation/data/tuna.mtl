@@ -1,0 +1,23 @@
+# Wavefront material library
+# Tue Aug 03 07:48:21 1999
+# Created with Viewpoint Interchange www.viewpoint.com
+
+newmtl tna_body
+  Ka 0 0 0
+  Kd 0 0 0
+  Ks 0 0 0
+  illum 2
+  map_Kd tuna.tif
+
+newmtl tna_mouth
+  Ka 0 0 0
+  Kd 0.690196 0.67451 0.694118
+  Ks 0.690196 0.67451 0.694118
+  illum 2
+
+#newmtl tna_eye
+#  Ka 0 0 0
+#  Kd 0 0 0
+#  Ks 0 0 0
+#  illum 2
+#  map_Kd images\eye_fsh.TIF
