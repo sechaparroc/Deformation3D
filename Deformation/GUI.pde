@@ -1,7 +1,8 @@
 int drag_mode = -1;
 //needed to know the change of position 
 Vec initial_drag_pos = null;
-
+int step_per_point = 10;
+boolean clear_points = true;
 boolean change_points = true;
 
 void morphTransformationAction(){
@@ -169,6 +170,8 @@ public Vec getIntersectionPoint(float x, float y){
 //KEYBOARD HANDLING EVENTS
 boolean add_mode = true;
 boolean bounding_rect = true;
+boolean enable_texture = false;
+int num_t = 1;
 void keyPressed(){
   if (key == 'c'){
     add_mode = !add_mode;
@@ -176,5 +179,88 @@ void keyPressed(){
   if (key == 'r'){
     bounding_rect = !bounding_rect;
   }
+  //predefined transformation
+  //auto points 
+  if(key == 'v' || key == 'V'){
+    step_per_point = vertices.size()/((int)random(15,30) + 1);
+    addControlPointsAuto(true);
+    updateControlPoints();
+    morphTransformationAction();
+  }
+  //scale x
+  if(key=='1'){
+    scaleX(clear_points);
+    updateControlPoints();
+    morphTransformationAction();
+  }
+  //scale y  
+  if(key=='2'){
+    scaleY(clear_points);
+    updateControlPoints();
+    morphTransformationAction();
+  }
+  //scale z  
+  if(key=='3'){
+    scaleZ(clear_points);
+    updateControlPoints();
+    morphTransformationAction();
+  }
+  //spline XZ
+  //horizontal
+  if(key=='4'){
+    applyHorizontalZXSpline(clear_points);
+    updateControlPoints();
+    morphTransformationAction();
+  }
+  //vertical
+  if(key=='5'){
+    applyVerticalZXSpline(clear_points);
+    updateControlPoints();
+    morphTransformationAction();
+  }  
+  //spline YZ
+  //spline horizontal 
+  if(key=='6'){
+    applyHorizontalYZSpline(clear_points);
+    updateControlPoints();
+    morphTransformationAction();
+  }
+  //spline vertical 
+  if(key=='7'){
+    applyVerticalYZSpline(clear_points);
+    updateControlPoints();
+    morphTransformationAction();
+  }
+  //spline XY
+  //spline horizontal 
+  if(key=='8'){
+    applyHorizontalXYSpline(clear_points);
+    updateControlPoints();
+    morphTransformationAction();
+  }
+  //spline vertical 
+  if(key=='9'){
+    applyVerticalXYSpline(clear_points);
+    updateControlPoints();
+    morphTransformationAction();
+  }
+  
+  if(key=='0'){
+    combination();
+  }
+  
+  if(key =='z'){
+    if(enable_texture){ 
+      applyTexture(original_fig, figure);
+      applyTexture(deformed_fig, deformed_figure);
+      num_t = num_t != 24 ? (num_t + 1) : 1; 
+    }
+    else{
+      fillWithColor(original_fig, figure, color(255,0,0));
+      fillWithColor(deformed_fig, deformed_figure, color(100,0,130));
+    }
+    enable_texture = !enable_texture;
+  }
 }
+
 
