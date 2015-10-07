@@ -1,22 +1,27 @@
-import remixlab.proscene.*;
-import remixlab.dandelion.core.*;
-import remixlab.dandelion.geom.*;
 import papaya.*;
+import remixlab.bias.core.*;
+import remixlab.bias.event.*;
+import remixlab.proscene.*;
+import remixlab.dandelion.core.Constants.*;
+import remixlab.dandelion.geom.*;
+import remixlab.dandelion.core.*;
 
-
-ArrayList<PVector> control_points = new ArrayList<PVector>();
-ArrayList<PVector> control_points_out = new ArrayList<PVector>();
+//ArrayList<ControlPoint> control_points = new ArrayList<ControlPoint>(); 
+ArrayList<ControlPoint> control_points = new ArrayList<ControlPoint>();
 
 PShape figure;
 PShape deformed_figure;
 Scene main_scene;
-InteractiveModelFrame original_fig;
-InteractiveModelFrame deformed_fig;
-
+CustomModelFrame original_fig;
+CustomModelFrame deformed_fig;
+SelectionArea selection;
 int all_width = 640;
 int all_height = 360;
 
 ArrayList<PVector> vertices = new ArrayList<PVector>();
+ArrayList<PVector> selected_vertices = new ArrayList<PVector>();
+ArrayList<Integer> selected_vertices_i = new ArrayList<Integer>();
+
 ArrayList<PVector> deformed_vertices = new ArrayList<PVector>();
 Vec r_center;
 Vec[] r_bounds;
@@ -52,13 +57,13 @@ public void setup() {
   main_scene.setRadius(160);
   main_scene.showAll();  
   //associate the shape with the original shape frame
-  original_fig = new InteractiveModelFrame(main_scene, figure);
+  original_fig = new CustomModelFrame(main_scene, figure);
   println(figure);
   original_fig.translate(-50,50,0);
   original_fig.scale(0.5);
   original_fig.rotate(0,0,PI,0);
   //initial deformed shape without modifications
-  deformed_fig = new InteractiveModelFrame(main_scene, deformed_figure);
+  deformed_fig = new CustomModelFrame(main_scene, deformed_figure);
   deformed_fig.translate(50,50,0);
   deformed_fig.scale(0.5);
   deformed_fig.rotate(0,0,PI,0);
@@ -68,23 +73,46 @@ public void setup() {
   println(figure.getChildCount());
   noSmooth();  
   fillWithColor(original_fig, figure, color(255,0,0));
-  fillWithColor(deformed_fig, deformed_figure, color(100,0,130));  
+  fillWithColor(deformed_fig, deformed_figure, color(0,255,0));
+
+  main_scene.mouseAgent().setButtonBinding(Target.FRAME, RIGHT, DOF2Action.CUSTOM);
+  main_scene.mouseAgent().setClickBinding(Target.FRAME, RIGHT, ClickAction.CUSTOM);     
+  selection = new SelectionArea();  
 }
 
-public void draw() {
-  handleAgents(); 
+public void draw() { 
   background(0);
-  lights();    
-
+  lights();
   original_fig.draw();
   deformed_fig.draw();
   if(bounding_rect) drawCube(original_fig);
-  pushMatrix();
+  /*pushMatrix();
     original_fig.applyTransformation();//very efficient  
     drawControlPoints(control_points, color(0,0,255));
+  popMatrix();*/
+  pushMatrix();
+    original_fig.applyTransformation();//very efficient      
+    drawControlPoints();
   popMatrix();
-  drawControlPoints(control_points,control_points_out);  
-
+  
+  if(selection_active){
+    main_scene.beginScreenDrawing();
+    selection.draw();    
+    main_scene.endScreenDrawing();
+  }
+  if(selected_vertices.size() > 0){
+    pushMatrix();
+    pushStyle();
+    stroke(color(200,200,200));
+    strokeWeight(7);
+      original_fig.applyTransformation();//very efficient      
+      for(PVector p : selected_vertices){
+        point(p.x,p.y,p.z);
+      }
+    popStyle();
+    popMatrix();
+  }
+  
 }
 
 void handleAgents(){

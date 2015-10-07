@@ -121,6 +121,27 @@ void setVertices(PShape figure, ArrayList<PVector> new_positions){
   }
 }
 
+void setVertices(PShape figure, ArrayList<PVector> new_positions, ArrayList<Integer> pos){
+  int cont = 0;
+  int k = 0;
+  int w = 0;
+  for(int i = 0; i < pos.size(); i++){
+    println(" pos -- : " + pos.get(i));
+  }
+  
+  for(int j = 0; j < figure.getChildCount(); j++){
+    if(w == pos.size()) return;
+    PShape p = figure.getChild(j); 
+    for(int i = 0; i < p.getVertexCount(); i++){
+      if(cont == pos.get(w++)){
+        println("indice : " + cont);        
+        p.setVertex(i, new_positions.get(k++));
+      }
+      cont++;
+    }
+  }
+}
+
 //apply a texture
 public void applyTexture(InteractiveModelFrame f, PShape p){
   Vec[] r_bounds = getCube(p);
@@ -208,3 +229,223 @@ public void fillWithColor(InteractiveModelFrame f, PShape p, color c){
   p = p_group;
   f.setShape(p);
 }
+
+//control points
+float RADIUS_POINT = 9;
+int cont = 0;
+
+public class ControlPoint extends InteractiveFrame{
+  Vec B;
+  float radius;
+  
+  public ControlPoint(Scene sc, Vec i){
+    super(sc);        
+    B = new Vec(0,0,0); radius = RADIUS_POINT;  
+    this.translate(i);
+  }  
+  
+  public ControlPoint(Scene sc, Frame f, Vec i){
+    super(sc,f);        
+    B = new Vec(0,0,0); radius = RADIUS_POINT;  
+    this.translate(i);
+  }  
+
+  public ControlPoint(Scene sc, Vec i, float r){
+    super(sc);    
+    B = new Vec(0,0,0); radius = r;
+    translate(i);
+  }
+
+  public ControlPoint(Scene sc, Vec i, Vec f){
+    super(sc);    
+    B = f; radius = RADIUS_POINT;
+    translate(i);  
+  }
+
+  public ControlPoint(Scene sc, Vec i, Vec f, float r){
+    super(sc);    
+    B = f; radius = r;
+    translate(i);  
+  }
+  
+  public boolean IsInsideA(Vec v){
+    return Vec.distance(v, position()) <= radius ? true : false;
+  }
+  public boolean IsInsideB(Vec v){
+    Vec f = Vec.add(position(), B);
+    return Vec.distance(v, f) <= radius ? true : false;
+  }     
+
+  @Override
+  public void performCustomAction(ClickEvent event) {
+      control_points.remove(this);
+      //this.detachFromEye();
+      //update A
+      updateControlPoints();
+      morphTransformationAction();    
+  }
+  int moving_point = -1;
+  
+  @Override
+  public boolean checkIfGrabsInput(float x, float y){
+    float threshold = radius/2.;
+    Vec B_q = inverseCoordinatesOf(B);
+    Vec proj = scene().eye().projectedCoordinatesOf(B_q);
+    if((Math.abs(x - proj.vec[0]) < threshold) && (Math.abs(y - proj.vec[1]) < threshold)){ 
+      println("entra " + cont++);
+      moving_point = 1;
+      return true;
+    }
+    proj = scene().eye().projectedCoordinatesOf(position());
+    if((Math.abs(x - proj.vec[0]) < threshold) && (Math.abs(y - proj.vec[1]) < threshold)){
+      println("entra " + cont++);
+      moving_point = 0;
+      return true;      
+    }
+    if(!isInInteraction()) moving_point = -1;    
+    return false;
+  }
+
+  public Vec checkPickedPoint(float x, float y){
+    float threshold = radius/2.;
+    println("x : "+ x + " y : " + y);
+    println("xx : "+ mouseX + " yy : " + mouseY);
+    println("pos : " + position());
+    Vec B_q = inverseCoordinatesOf(B);
+    Vec proj = scene().eye().projectedCoordinatesOf(B_q);
+    if((Math.abs(x - proj.vec[0]) < threshold) && (Math.abs(y - proj.vec[1]) < threshold)){ 
+      println("entra1");
+      return B;
+    }
+    proj = scene().eye().projectedCoordinatesOf(position());
+    if((Math.abs(x - proj.vec[0]) < threshold) && (Math.abs(y - proj.vec[1]) < threshold)){
+      println("entra2");     
+      return position();
+    }
+    return null;
+  } 
+
+  @Override
+  public void performCustomAction(DOF2Event event) {
+    println("superior");
+    //Vec v = checkPickedPoint(event.x(), event.y());
+    //println(v);
+    if(moving_point == -1) return;
+    Vec p = position();
+    if(moving_point == 0){
+      println("traslada");
+      translate(screenToVec(Vec.multiply(new Vec(isEyeFrame() ? -event.dx() : event.dx(),
+        (scene().isRightHanded() ^ isEyeFrame()) ? -event.dy() : event.dy(), 0.0f), this.translationSensitivity())));
+    } 
+    if(moving_point == 1) customTranslation(event);
+    morphTransformationAction();
+  }
+  @Override
+  public void performCustomAction(DOF3Event event) {
+    Vec v = checkPickedPoint(event.x(), event.y());
+    if(v == null) return;
+    Vec p = position();
+    if(v.x() == p.x() && v.y() == p.y() && v.z() == p.z()){
+      translate(screenToVec(Vec.multiply(new Vec(isEyeFrame() ? -event.dx() : event.dx(),
+        (scene().isRightHanded() ^ isEyeFrame()) ? -event.dy() : event.dy(), 0.0f), this.translationSensitivity())));
+    } 
+    if(v == B)customTranslation(event);
+  }
+
+  public void customTranslation(DOF2Event event){
+    Vec dif = screenToVec(Vec.multiply(new Vec(isEyeFrame() ? -event.dx() : event.dx(),
+        (scene().isRightHanded() ^ isEyeFrame()) ? -event.dy() : event.dy(), 0.0f), this.translationSensitivity()));    
+    B.add(dif);
+  }
+
+  public void customTranslation(DOF3Event event){
+    Vec dif = screenToVec(Vec.multiply(
+        new Vec(event.dx(), scene().isRightHanded() ? -event.dy() : event.dy(), -event.dz()),
+        this.translationSensitivity()));
+    B.add(dif);   
+  }
+  
+  public void drawShape(){
+      pushStyle();
+      stroke(255,255,255);
+      Vec aux = B;
+      line(0,0,0,aux.x(), aux.y(), aux.z());
+      stroke(0,0,255);
+      strokeWeight(radius);
+      point(aux.x(), aux.y(), aux.z());
+      //translate(aux.x(), aux.y(), aux.z());
+      stroke(0,255,0);
+      point(0,0,0);
+      popStyle();
+  }
+}
+
+
+public class CustomModelFrame extends InteractiveModelFrame{
+  public CustomModelFrame(Scene sc, PShape s){
+    super(sc, s);
+  }
+  
+  @Override
+  public void performCustomAction(DOF2Event event) {
+      translate(screenToVec(Vec.multiply(new Vec(isEyeFrame() ? -event.dx() : event.dx(),
+        (scene().isRightHanded() ^ isEyeFrame()) ? -event.dy() : event.dy(), 0.0f), this.translationSensitivity())));
+  }
+}
+
+public class SelectionArea{
+  Vec init; Vec end;
+  
+  public SelectionArea(){
+    init = new Vec();
+    end  = new Vec();
+  }
+  
+  public SelectionArea(float x, float y){
+    init = new Vec(x,y);
+  }
+
+  public void draw(){
+    pushStyle();
+    fill(color(200,200,200,100));
+    rect(init.x(), init.y(), end.x() - init.x(), end.y() - init.y());
+    popStyle();
+  }
+  
+  public void sortCorners(){
+    Vec tl = new Vec(0,0); 
+    Vec br = new Vec(0,0); 
+    tl.setX(min(init.vec[0], end.vec[0]));
+    tl.setY(min(init.vec[1], end.vec[1]));
+    br.setX(max(init.vec[0], end.vec[0]));
+    br.setY(max(init.vec[1], end.vec[1]));
+    init = tl;
+    end = br;
+    println("--init : " + init);
+    println("--end : " + end);
+
+  }
+  
+  public ArrayList<PVector> getVertices(ArrayList<PVector> vertices){
+    ArrayList<PVector> new_vertices = new ArrayList<PVector>(); 
+    selected_vertices_i = new ArrayList<Integer>();
+    sortCorners();
+    println("--init : " + init);
+    println("--end : " + end);
+    int c = 0;
+    for(PVector i : vertices){
+      Vec v = new Vec(i.x,i.y,i.z);
+      v = original_fig.inverseCoordinatesOf(v);
+      v = main_scene.eye().projectedCoordinatesOf(v);
+      if(v.vec[0] >= init.vec[0] && v.vec[0] <= end.vec[0]){
+        if(v.vec[1] >= init.vec[1] && v.vec[1] <= end.vec[1]){
+          new_vertices.add(i);         
+          selected_vertices_i.add(c);          
+        }
+      }
+      c++;
+    }
+    return new_vertices;
+  }
+}
+

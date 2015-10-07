@@ -4,36 +4,52 @@ Vec initial_drag_pos = null;
 int step_per_point = 10;
 boolean clear_points = true;
 boolean change_points = true;
+boolean selection_active = false;
+boolean selection_mode = false;
+boolean use_selected = false;
 
 void morphTransformationAction(){
-  deformed_vertices = calculateNewImage(vertices,control_points_out);
+  
+  if(!use_selected){
+    deformed_vertices = calculateNewImage(vertices,control_points);
+    setVertices(deformed_figure, deformed_vertices);
+  }
+  else{
+    deformed_vertices = calculateNewImage(selected_vertices,control_points);
+    setVertices(deformed_figure, deformed_vertices, selected_vertices_i);
+  }    
   //modify the shape
-  setVertices(deformed_figure, deformed_vertices);
 }
 
 void addPoint(PVector v){
   if(control_points.size() == 0){
-    control_points.add(v);
-    control_points_out.add(v);
+    control_points.add(new ControlPoint(main_scene, original_fig, new Vec(v.x,v.y,v.z)));
     return;
   }
+  Vec vec = new Vec(v.x,v.y,v.z);
   float min_dist_l = 9999;
   int best_pos = control_points.size();
   for(int i = 0; i < control_points.size(); i++){
-      PVector left = control_points.get(i);
-      if(v.dist(left) < min_dist_l){
-        min_dist_l = v.dist(left);
+      Vec left = control_points.get(i).position();
+      if(vec.distance(left) < min_dist_l){
+        min_dist_l = vec.distance(left);
         best_pos = i+1;        
       }      
   }
-  control_points.add(best_pos,v);
-  control_points_out.add(best_pos,v);
+  control_points.add(best_pos,new ControlPoint(main_scene, original_fig, new Vec(v.x,v.y,v.z)));
   //update A
   updateControlPoints();
   
 }
 
 void mousePressed( ){
+  if(selection_mode){
+    selection_active = true;
+    selection.init =  new Vec(mouseX, mouseY);
+    selection.end = new Vec(mouseX, mouseY);  
+    //main_scene.eye().projectedCoordinatesOf(new Vec(mouseX, mouseY));
+    return;  
+  }
   if(!add_mode) return;
   //use point under pixel to locate the point in an aproppiate deph position
   Vec point_shape = getIntersectionPoint(mouseX, mouseY);
@@ -53,38 +69,18 @@ void mousePressed( ){
       initial_drag_pos = main_scene.eye().unprojectedCoordinatesOf(new Vec(mouseX, mouseY));
     }
   }
-  else if(mouseButton == RIGHT){
-    //remove a point
-    int pos = getControlPoint(point_world.x(), point_world.y(), point_world.z());
-    if(pos != -1){
-      control_points.remove(pos);
-      control_points_out.remove(pos);
-      //update A
-      updateControlPoints();
-      morphTransformationAction();
-    }
-  }
 }
 
 void mouseReleased(){
+  selection_active = false;
   drag_mode = -1;
   initial_drag_pos = null;
 }
 
 void mouseDragged(){
-  if(drag_mode != -1){
-    //get coordinates in world
-    Vec point_world = main_scene.eye().unprojectedCoordinatesOf(new Vec(mouseX, mouseY));
-    //get the vector position change, and according to this modify the local point
-    Vec delta = Vec.subtract(point_world,initial_drag_pos);
-    //set the position
-    Vec p = new Vec(control_points.get(drag_mode).x, control_points.get(drag_mode).y, control_points.get(drag_mode).z);
-    Vec control_world = original_fig.inverseCoordinatesOf(p);
-    Vec control_world_new = Vec.add(control_world, delta);
-    Vec point_shape = original_fig.coordinatesOf(control_world_new);
-    //println("drag : " + drag_mode);
-    control_points_out.set(drag_mode, new PVector(point_shape.x(), point_shape.y(), point_shape.z()));
-    morphTransformationAction();
+  if(selection_active){
+    selection.end = new Vec(mouseX, mouseY);  
+    //main_scene.eye().projectedCoordinatesOf();
   }
 }
 
@@ -111,8 +107,7 @@ boolean isInside(Vec p, float x, float y, float z){
 
 int getControlPoint(float x, float y, float z){
   for(int i = 0; i < control_points.size(); i++){
-    PVector p = control_points.get(i);
-    Vec point_world = original_fig.inverseCoordinatesOf(new Vec(p.x, p.y, p.z));
+    Vec point_world = original_fig.inverseCoordinatesOf(control_points.get(i).position());
     if(isInside(point_world,x,y,z)) return i;
   }
   return -1;
@@ -135,6 +130,15 @@ void drawControlPoints(ArrayList<PVector> control_points, int col){
   }  
   p.popStyle();
   change_points = false;
+}
+
+void drawControlPoints(){
+  for(ControlPoint cp : control_points){
+    pushMatrix();
+    cp.applyTransformation();
+    cp.drawShape();
+    popMatrix();
+  }
 }
 
 void drawControlPoints(ArrayList<PVector> control_points, ArrayList<PVector> control_points_out){
@@ -174,8 +178,27 @@ boolean enable_texture = false;
 int num_t = 1;
 void keyPressed(){
   if (key == 'c'){
+    selection_mode = add_mode;
     add_mode = !add_mode;
+    if(selection_mode) main_scene.disableMotionAgent();
+    else main_scene.enableMotionAgent();
   }
+  if (key == 'x' || key == 'X'){
+    add_mode = selection_mode;
+    selection_mode = !selection_mode; 
+    if(selection_mode) main_scene.disableMotionAgent();
+    else{ 
+      main_scene.enableMotionAgent();
+      selected_vertices = selection.getVertices(vertices);
+      println("llega con size : " + selected_vertices.size());
+    }
+  }
+  
+  if(key == 'b' || key == 'B'){
+    use_selected = !use_selected;
+    if(selected_vertices.size() == 0) use_selected = false;
+  }
+
   if (key == 'r'){
     bounding_rect = !bounding_rect;
   }
@@ -250,6 +273,9 @@ void keyPressed(){
   }
   
   if(key =='z'){
+      fillWithColor(original_fig, figure, color(255,0,0));
+      fillWithColor(deformed_fig, deformed_figure, color(0,255,0));
+    /*
     if(enable_texture){ 
       applyTexture(original_fig, figure);
       applyTexture(deformed_fig, deformed_figure);
@@ -258,9 +284,11 @@ void keyPressed(){
     else{
       fillWithColor(original_fig, figure, color(255,0,0));
       fillWithColor(deformed_fig, deformed_figure, color(100,0,130));
-    }
+    }*/
     enable_texture = !enable_texture;
   }
 }
+
+
 
 
