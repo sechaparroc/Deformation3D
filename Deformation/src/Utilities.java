@@ -1,3 +1,4 @@
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import processing.core.*;
 import remixlab.bias.core.BogusEvent;
@@ -167,43 +168,37 @@ public class Utilities {
 	  }
 	}
 
-	//apply a texture
-	public static void applyTexture(InteractiveFrame f, PShape p){
-	  Vec[] r_bounds = getCube(p);
+	public static void cloneWithTexture(InteractiveFrame f, PShape p, String texture){
 	  PApplet ap = ((Scene) f.scene()).pApplet();
-	  PImage text = ap.loadImage("E:/Sebchap/UNAL/Processing/Programs2015/Programs/Fishbowl3D/fishbowl/data/textures/" + Deformation.num_t + ".png");
+	  f.setShape(cloneWithTexture(ap, p, texture));
+	}
+	
+	//apply a texture
+	public static PShape cloneWithTexture(PApplet ap, PShape p, String texture){
+	  Vec[] r_bounds = getCube(p);
+	  PImage text = ap.loadImage(texture);
 	  PShape p_group = ap.createShape(PConstants.GROUP);
-	  
-	  //step btwn vertices
+	  //step between vertices
 	  float dif = 0; 
 	  float g_dif = 0;
 	  float second_dif = 0;
-	  if(r_bounds[1].x() - r_bounds[0].x() > dif){
-	    g_dif = 0;
-	  }
-	  if(r_bounds[1].y() - r_bounds[0].y() > dif){
-	    g_dif = 1;
-	  }
-	  if(r_bounds[1].z() - r_bounds[0].z() > dif){
-	    g_dif = 2;
-	  }
-
-	  dif = 0;
-	  if(r_bounds[1].x() - r_bounds[0].x() > dif && g_dif != 0){
-	    second_dif = 0;
-	  }
-	  if(r_bounds[1].y() - r_bounds[0].y() > dif && g_dif != 1){
-	    second_dif = 1;
-	  }
-	  if(r_bounds[1].z() - r_bounds[0].z() > dif && g_dif != 2){
-	    second_dif = 2;
-	  }
 	  
+	  /*get the face with the higher dimension*/
+	  if(r_bounds[1].x() - r_bounds[0].x() > dif) g_dif = 0;
+	  else if(r_bounds[1].y() - r_bounds[0].y() > dif) g_dif = 1;
+	  else if(r_bounds[1].z() - r_bounds[0].z() > dif) g_dif = 2;
+	  dif = 0;
+	  if(r_bounds[1].x() - r_bounds[0].x() > dif && g_dif != 0) second_dif = 0;
+	  else if(r_bounds[1].y() - r_bounds[0].y() > dif && g_dif != 1)  second_dif = 1;
+	  else if(r_bounds[1].z() - r_bounds[0].z() > dif && g_dif != 2)  second_dif = 2;
+	  
+	  //set up the texture width and height
 	  float s_w = g_dif == 0 ? r_bounds[1].x() - r_bounds[0].x() : g_dif == 1 ? r_bounds[1].y() - r_bounds[0].y() : r_bounds[1].z() - r_bounds[0].z();
 	  float s_h = second_dif == 0 ? r_bounds[1].x() - r_bounds[0].x() : second_dif == 1 ? r_bounds[1].y() - r_bounds[0].y() : r_bounds[1].z() - r_bounds[0].z();
+
 	  float i_w = text.width;
 	  float i_h = text.height;
-	  float rep = 0;
+
 	  for(int j = 0; j < p.getChildCount(); j++){
 	    PShape pc = p.getChild(j);
 	    PShape p_clone = ap.createShape();
@@ -219,19 +214,17 @@ public class Utilities {
 	      float v = second_dif == 0 ? idx.x - r_bounds[0].x() : second_dif == 1 ? idx.y - r_bounds[0].y() : idx.z - r_bounds[0].z();
 	      u = i_w*u*1.f/s_w;
 	      v = i_h*v*1.f/s_h;    
-	      p_clone.vertex(idx.x,idx.y,idx.z, u,v);
 	      p_clone.normal(n.x,n.y,n.z);
+	      p_clone.vertex(idx.x,idx.y,idx.z, u,v);
 	    }
 	    p_clone.endShape();
 	    p_group.addChild(p_clone);
 	  }
-	  p = p_group;
-	  f.setShape(p);
+	  return p_group;
 	}
 	
 	//fill with a color
-	//fill with a color
-	public static PShape fillWithColor(PApplet ap, PShape p, int c){
+	public static PShape cloneShape(PApplet ap, PShape p, int c){
 	  PShape p_group = ap.createShape(PConstants.GROUP);
 	  for(int j = 0; j < p.getChildCount(); j++){
 	    PShape pc = p.getChild(j);
@@ -242,8 +235,8 @@ public class Utilities {
 	    for(int i = 0; i < pc.getVertexCount(); i++){
 	      PVector v = pc.getVertex(i);
 	      PVector n = pc.getNormal(i);
-	      p_clone.vertex(v.x,v.y,v.z);
 	      p_clone.normal(n.x,n.y,n.z);
+	      p_clone.vertex(v.x,v.y,v.z);
 	    }
 	    p_clone.endShape();
 	    p_group.addChild(p_clone);    
@@ -251,228 +244,12 @@ public class Utilities {
 	  return p_group;
 	}
 	
-	
-
 	//fill with a color
-	public static PShape fillWithColor(InteractiveFrame f, PShape p, int c){
+	public static PShape cloneShape(InteractiveFrame f, PShape p, int c){
 	  PApplet ap = ((Scene) f.scene()).pApplet();	  
-	  PShape p_group = ap.createShape(PConstants.GROUP);
-	  for(int j = 0; j < p.getChildCount(); j++){
-	    PShape pc = p.getChild(j);
-	    PShape p_clone = ap.createShape();
-	    p_clone.beginShape(PConstants.POLYGON);
-	    p_clone.fill(c);
-	    p_clone.noStroke();
-	    for(int i = 0; i < pc.getVertexCount(); i++){
-	      PVector v = pc.getVertex(i);
-	      PVector n = pc.getNormal(i);
-	      p_clone.vertex(v.x,v.y,v.z);
-	      p_clone.normal(n.x,n.y,n.z);
-	    }
-	    p_clone.endShape();
-	    p_group.addChild(p_clone);    
-	  }
-	  f.setShape(p);
-	  return p_group;
+	  return cloneShape(ap, p, c);
 	}
 
-	//control points
-	/*
-	 * An interactive tool used for enable the deformation of a shape
-	 * */
-	public static float RADIUS_POINT = 15;
-	public static int cont = 0;
-
-	public static class ControlPoint extends InteractiveFrame{
-	  Vec B;
-	  float radius;
-	  PShape p;
-	  
-	  @Override
-	  public Scene scene() {
-	    return (Scene) gScene;
-	  }
-	  
-	  public void setB(Vec B){
-		  this.B = B;
-		  updateShape();
-	  }
-	  
-	  public void setupProfile(){
-		  //setMouseBindings();
-		  setClickBinding(MouseAgent.RIGHT_ID, 1, "remove");
-		  setMotionBinding(MouseAgent.RIGHT_ID, "performTranslation");
-		  //this.addGraphicsHandler(this, "drawShape");
-		  updateShape();
-	  }
-	  
-	  public ControlPoint(Scene sc, Vec i){
-	    super(sc);        
-	    B = new Vec(0,0,0); radius = RADIUS_POINT;  
-	    this.translate(i);
-	    setupProfile();
-	  }  
-	  
-	  public ControlPoint(Scene sc, Frame f, Vec i){
-	    super(sc);
-	    this.setReferenceFrame(f);
-	    B = new Vec(0,0,0); radius = RADIUS_POINT;  
-	    this.translate(i);
-	    setupProfile();
-	  }  
-
-	  public ControlPoint(Scene sc, Vec i, float r){
-	    super(sc);    
-	    B = new Vec(0,0,0); radius = r;
-	    translate(i);
-	    setupProfile();
-	  }
-
-	  public ControlPoint(Scene sc, Vec i, Vec f){
-	    super(sc);    
-	    B = f; radius = RADIUS_POINT;
-	    translate(i);  
-	    setupProfile();
-	  }
-
-	  public ControlPoint(Scene sc, Vec i, Vec f, float r){
-	    super(sc);    
-	    B = f; radius = r;
-	    translate(i);  
-	    setupProfile();
-	  }
-	  
-	  public boolean IsInsideA(Vec v){
-	    return Vec.distance(v, position()) <= radius ? true : false;
-	  }
-	  public boolean IsInsideB(Vec v){
-	    Vec f = Vec.add(position(), B);
-	    return Vec.distance(v, f) <= radius ? true : false;
-	  }     
-
-	  public void remove(ClickEvent event) {
-	      Deformation.control_points.remove(this);
-	      //this.detachFromEye();
-	      //update A
-	      LeastSolver.updateControlPoints();
-	      Deformation.morphTransformationAction();    
-	  }
-	  int moving_point = -1;
-	  //check the position of the mouse
-	  
-	  public void selectAction(float x, float y){
-	    float threshold = (float) radius/2.f;
-	    Vec B_q = inverseCoordinatesOf(B);
-	    Vec proj = scene().eye().projectedCoordinatesOf(B_q);
-	    if((Math.abs(x - proj.vec[0]) < threshold) && (Math.abs(y - proj.vec[1]) < threshold)){ 
-	      moving_point = 1;
-	      return;
-	    }
-	    proj = scene().eye().projectedCoordinatesOf(position());
-	    if((Math.abs(x - proj.vec[0]) < threshold) && (Math.abs(y - proj.vec[1]) < threshold)){
-	      moving_point = 0;
-	      return;
-	    }
-	    moving_point = -1;    
-	  }
-	  
-	  public Vec checkPickedPoint(float x, float y){
-	    float threshold = radius/2.f;
-	    System.out.println("x : "+ x + " y : " + y);
-	    //System.out.println("xx : "+ mouseX + " yy : " + mouseY);
-	    System.out.println("pos : " + position());
-	    Vec B_q = inverseCoordinatesOf(B);
-	    Vec proj = scene().eye().projectedCoordinatesOf(B_q);
-	    if((Math.abs(x - proj.vec[0]) < threshold) && (Math.abs(y - proj.vec[1]) < threshold)){ 
-	      System.out.println("entra1");
-	      return B;
-	    }
-	    proj = scene().eye().projectedCoordinatesOf(position());
-	    if((Math.abs(x - proj.vec[0]) < threshold) && (Math.abs(y - proj.vec[1]) < threshold)){
-	      System.out.println("entra2");     
-	      return position();
-	    }
-	    return null;
-	  } 
-
-	  public void performTranslation(DOF2Event event) {
-		if(event.fired() || event.flushed()){
-			selectAction(event.x(),event.y());
-		    updateShape();
-		}
-		System.out.println("sel : " + moving_point + " coords x: " + event.x() + " y : " + event.y());
-	    //Vec v = checkPickedPoint(event.x(), event.y());
-	    //System.out.println(v);
-	    if(moving_point == -1) return;
-	    Vec p = position();
-	    if(moving_point == 0){
-	      System.out.println("traslada");
-	      translate(screenToVec(Vec.multiply(new Vec(isEyeFrame() ? -event.dx() : event.dx(),
-	        (scene().isRightHanded() ^ isEyeFrame()) ? -event.dy() : event.dy(), 0.0f), this.translationSensitivity())));
-	    } 
-	    if(moving_point == 1){
-	    	customTranslation(event);
-	    }
-	    if(event.flushed()) Deformation.morphTransformationAction();
-	  }
-	  public void performTranslation3(DOF3Event event) {
-	    Vec v = checkPickedPoint(event.x(), event.y());
-	    if(v == null) return;
-	    Vec p = position();
-	    if(v.x() == p.x() && v.y() == p.y() && v.z() == p.z()){
-	      translate(screenToVec(Vec.multiply(new Vec(isEyeFrame() ? -event.dx() : event.dx(),
-	        (scene().isRightHanded() ^ isEyeFrame()) ? -event.dy() : event.dy(), 0.0f), this.translationSensitivity())));
-	    } 
-	    if(v == B){
-	    	customTranslation(event);
-	    }
-	  }
-
-	  public void customTranslation(DOF2Event event){
-	    Vec dif = screenToVec(Vec.multiply(new Vec(isEyeFrame() ? -event.dx() : event.dx(),
-	        (scene().isRightHanded() ^ isEyeFrame()) ? -event.dy() : event.dy(), 0.0f), this.translationSensitivity()));    
-	    B.add(dif);
-	  }
-
-	  public void customTranslation(DOF3Event event){
-	    Vec dif = screenToVec(Vec.multiply(
-	        new Vec(event.dx(), scene().isRightHanded() ? -event.dy() : event.dy(), -event.dz()),
-	        this.translationSensitivity()));
-	    B.add(dif);   
-	  }
-	  
-	  public void updateShape(){
-	      Vec aux = B;
-		  PShape line = scene().pApplet().createShape(PConstants.LINE, 0,0,0, aux.x(), aux.y(), aux.z());
-		  line.setStroke(scene().pApplet().color(255,255,255));
-		  PShape p1 = scene().pApplet().createShape(PConstants.BOX, radius, radius, radius);
-		  p1.translate(0,0,0);
-		  p1.setFill(scene().pApplet().color(0,255,0));
-		  PShape p2 = scene().pApplet().createShape(PConstants.BOX, radius, radius, radius);
-		  p2.translate(aux.x(), aux.y(), aux.z());
-		  p2.setFill(scene().pApplet().color(0,0,255));
-		  PShape p = scene().pApplet().createShape(PConstants.GROUP);
-		  p.addChild(p1);
-		  p.addChild(p2);
-		  p.addChild(line);
-		  setShape(p);
-	  }
-	  
-	  public void drawShape(){
-		  PGraphics p = scene().pApplet().g;
-	      p.pushStyle();
-	      p.stroke(255,255,255);
-	      Vec aux = B;
-	      p.line(0,0,0,aux.x(), aux.y(), aux.z());
-	      p.stroke(0,0,255);
-	      p.strokeWeight(radius);
-	      p.point(aux.x(), aux.y(), aux.z());
-	      //translate(aux.x(), aux.y(), aux.z());
-	      p.stroke(0,255,0);
-	      p.point(0,0,0);
-	      p.popStyle();
-	  }
-	}
 
 	/*Select the vertices of a shape that are bounded by the selected area*/
 	public static class SelectionArea{

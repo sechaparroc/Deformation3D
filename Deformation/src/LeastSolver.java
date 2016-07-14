@@ -1,6 +1,7 @@
 import java.util.*;
 
-import papaya.*;
+import no.uib.cipr.matrix.DenseMatrix;
+import no.uib.cipr.matrix.Matrices;
 import processing.core.*;
 import remixlab.dandelion.geom.*;
 import remixlab.proscene.InteractiveFrame;
@@ -12,8 +13,10 @@ public class LeastSolver {
 	public static float mod_factor = 8.f;
 	public static double[][] A;
 	public static double[][] w;
-
-	public static void getA(ArrayList<PVector> img, ArrayList<Utilities.ControlPoint> control){
+	
+	
+	
+	public static void getA(ArrayList<PVector> img, ArrayList<ControlPoint> control){
 	  A = new double[img.size()][control.size()];
 	  w = new double[img.size()][control.size()];
 	  int counter = 0;
@@ -22,8 +25,7 @@ public class LeastSolver {
 	    PVector sum_weights_per_p = new PVector(0,0,0);
 	    PVector p_star;
 	    for(int k = 0; k < control.size(); k++){
-	        Vec aux = Deformation.original_fig.coordinatesOfFrom(new Vec(0,0,0),control.get(k)); 
-	        //Vec aux = control.get(k).inverseCoordinatesOf(new Vec(0,0,0));
+	        Vec aux = control.get(k).translation(); 
 	        PVector pk = new PVector(aux.x(), aux.y(),aux.z()); 
 	        double den = (PVector.dist(v, pk)*PVector.dist(v, pk));
 	        den = den < 0.00000000001 ? 0.00000000001 : den;
@@ -38,8 +40,7 @@ public class LeastSolver {
 	    for(int i = 0; i < control.size(); i++){
 	      double[][] pt_per_wp = new double[3][3]; 
 	      for(int j = 0; j < control.size(); j++){
-	        Vec aux = Deformation.original_fig.coordinatesOfFrom(new Vec(0,0,0),control.get(j)); 
-	        //Vec aux = control.get(j).inverseCoordinatesOf(new Vec(0,0,0));
+	        Vec aux = control.get(j).translation();; 
 	        PVector pj = new PVector(aux.x(), aux.y(),aux.z()); 
 	        PVector p_hat_j = PVector.sub(pj,p_star);
 	        pt_per_wp[0][0] += w[counter][j]*p_hat_j.x*p_hat_j.x;            
@@ -52,44 +53,27 @@ public class LeastSolver {
 	        pt_per_wp[2][1] += w[counter][j]*p_hat_j.y*p_hat_j.z;            
 	        pt_per_wp[2][2] += w[counter][j]*p_hat_j.z*p_hat_j.z;            
 	      }   
-	      //Vec aux = control.get(i).position();
-	      Vec aux = Deformation.original_fig.coordinatesOfFrom(new Vec(0,0,0),control.get(i)); 
-	      //Vec aux = control.get(i).inverseCoordinatesOf(new Vec(0,0,0));
+	      Vec aux = control.get(i).translation(); 
 	      PVector pi = new PVector(aux.x(), aux.y(),aux.z()); 
 	      PVector p_hat_i = PVector.sub(pi,p_star);
 	      //inverse
-	      float[][] inv_pt_per_wp = papaya.Mat.inverse(Cast.doubleToFloat(pt_per_wp));     
+	      
+  		  DenseMatrix M  = new DenseMatrix(pt_per_wp);
+		  DenseMatrix I  = Matrices.identity(3);
+		  DenseMatrix inv_pt_per_wp = new DenseMatrix(3, 3);
+		  M.solve(I, inv_pt_per_wp);			
 	      double[] Ai_1 = new double[3];
-	      Ai_1[0]= (v_minus_p_s.x * inv_pt_per_wp[0][0]) + (v_minus_p_s.y * inv_pt_per_wp[0][1]) + (v_minus_p_s.z * inv_pt_per_wp[0][2]); 
-	      Ai_1[1]= (v_minus_p_s.x * inv_pt_per_wp[1][0]) + (v_minus_p_s.y * inv_pt_per_wp[1][1]) + (v_minus_p_s.z * inv_pt_per_wp[1][2]); 
-	      Ai_1[2]= (v_minus_p_s.x * inv_pt_per_wp[2][0]) + (v_minus_p_s.y * inv_pt_per_wp[2][1]) + (v_minus_p_s.z * inv_pt_per_wp[2][2]); 
-
+	      Ai_1[0]= (v_minus_p_s.x * inv_pt_per_wp.get(0, 0)) + (v_minus_p_s.y * inv_pt_per_wp.get(0, 1)) + (v_minus_p_s.z * inv_pt_per_wp.get(0, 2)); 
+	      Ai_1[1]= (v_minus_p_s.x * inv_pt_per_wp.get(1, 0)) + (v_minus_p_s.y * inv_pt_per_wp.get(1, 1)) + (v_minus_p_s.z * inv_pt_per_wp.get(1, 2)); 
+	      Ai_1[2]= (v_minus_p_s.x * inv_pt_per_wp.get(2, 0)) + (v_minus_p_s.y * inv_pt_per_wp.get(2, 1)) + (v_minus_p_s.z * inv_pt_per_wp.get(2, 2)); 
 	      A[counter][i] = Ai_1[0] * p_hat_i.x * w[counter][i] + Ai_1[1] * p_hat_i.y * w[counter][i] + Ai_1[2] * p_hat_i.z * w[counter][i];    
 	    }
 	    counter++;
 	  }
 	}
 
-	public static ArrayList<PVector> calculateNewImage(ArrayList<PVector> img, ArrayList<Utilities.ControlPoint> out_control){
+	public static ArrayList<PVector> calculateNewImage(ArrayList<PVector> img, ArrayList<ControlPoint> out_control){
 	  if(out_control.size() < 4) return img;
-	  //testingpurposes
-	  int num_id = 0;
-	  int num_no_id = 0;
-	  int same = 0;
-	  //println("begincontrol");
-	  //print("[");
-	  for(int i = 0; i < Deformation.control_points.size(); i++){
-	    //print(control_points.get(i) + ", ");
-	    Vec ci = Deformation.original_fig.coordinatesOfFrom(new Vec(0,0,0),Deformation.control_points.get(i));   
-	    //Vec ci = control_points.get(i).position();
-	    //Vec ci = control_points.get(i).inverseCoordinatesOf(new Vec(0,0,0));
-	    Vec cf = Deformation.original_fig.coordinatesOfFrom(Deformation.control_points.get(i).B,Deformation.control_points.get(i));   
-	    //Vec cf = Vec.add(control_points.get(i).B, ci); 
-	    if(ci.x() == cf.x() && ci.y() == cf.y() && ci.z() == cf.z()){
-	          same++;
-	    }
-	  }
-	  
 	  ArrayList<PVector> dest = new ArrayList<PVector>();
 	  int counter = 0;
 	  for(PVector v : img){
@@ -97,9 +81,7 @@ public class LeastSolver {
 	    PVector sum_weights_per_q = new PVector(0,0,0);
 	    PVector q_star;
 	    for(int k = 0; k < out_control.size(); k++){
-	        //Vec out_c = Vec.add(control_points.get(k).B, control_points.get(k).position());
-	        Vec out_c = Deformation.original_fig.coordinatesOfFrom(
-	        		Deformation.control_points.get(k).B,Deformation.control_points.get(k));
+	        Vec out_c = out_control.get(k).localInverseCoordinatesOf(out_control.get(k).B); 
 	        //Vec out_c = control_points.get(k).inverseCoordinatesOf(control_points.get(k).B);
 	        PVector qk = new PVector(out_c.x(), out_c.y(), out_c.z());
 	        sum_weights += w[counter][k]; 
@@ -110,10 +92,7 @@ public class LeastSolver {
 	    q_star = PVector.mult(sum_weights_per_q, 1.0f/(float)sum_weights);
 	    PVector sum_A_q_j = new PVector (0,0,0);
 	    for(int j = 0; j < out_control.size(); j++){
-	        Vec out_c = Deformation.original_fig.coordinatesOfFrom(
-	        		Deformation.control_points.get(j).B,Deformation.control_points.get(j));
-	        //Vec out_c = Vec.add(control_points.get(j).B, control_points.get(j).position());
-	        //Vec out_c =  control_points.get(j).inverseCoordinatesOf(control_points.get(j).B); 
+	        Vec out_c = out_control.get(j).localInverseCoordinatesOf(out_control.get(j).B); 
 	        PVector qj = new PVector(out_c.x(), out_c.y(), out_c.z());
 	        PVector q_hat_j = PVector.sub(qj,q_star);
 	        sum_A_q_j.x += A[counter][j]*q_hat_j.x;  
@@ -121,22 +100,9 @@ public class LeastSolver {
 	        sum_A_q_j.z += A[counter][j]*q_hat_j.z;  
 	    }
 	    PVector f_a_v = PVector.add(sum_A_q_j, q_star);
-	    //testingpurposes
-	    if(Math.abs(v.x - f_a_v.x) < 0.0001 &&
-	    	Math.abs(v.y - f_a_v.y) < 0.0001  && 
-	    	Math.abs(v.z - f_a_v.z) < 0.0001 ){
-	          num_id++;
-	    }else{
-	      num_no_id++;
-	    }
-	    
 	    dest.add(f_a_v);
 	    counter++;
 	  }
-	  //testingpurposes
-	  //println("id : " + num_id);
-	  //println("no id : " + num_no_id);
-	  //---
 	  return dest;
 	}
 
@@ -153,14 +119,20 @@ public class LeastSolver {
 	//SOME PREDEFINED DEFORMATIONS
 	public static void addControlPointsAuto(boolean rand){
 	  //clear
+	  while(!Deformation.control_points.isEmpty()){
+		  Deformation.control_points.remove(0);
+		  
+	  }
 	  Deformation.control_points.clear();
+	  
+	  
 	  for(int i = 0; i < Deformation.vertices.size(); i+= Deformation.step_per_point){
 	    //get coordinates in local frame
 	    //control_points.add(edges.get(i));
 	    if(!rand){
-	      Utilities.ControlPoint cp = new Utilities.ControlPoint(Deformation.main_scene, 
+	      ControlPoint cp = new ControlPoint(Deformation.main_scene, 
 	    		  Deformation.original_fig, new Vec(Deformation.vertices.get(i).x,
-	    				  Deformation.vertices.get(i).y,Deformation.vertices.get(i).z));
+	    				  Deformation.vertices.get(i).y,Deformation.vertices.get(i).z), Deformation.control_points);
 	      Deformation.control_points.add(cp);
 	    }else{
 	      PVector v = Deformation.vertices.get(i);
@@ -168,8 +140,8 @@ public class LeastSolver {
 	    		  v.z - Deformation.r_center.z());                                          
 	      new_v.mult((float)Math.random() + 1.f);
 	      new_v.add(v);
-	      Utilities.ControlPoint cp = new Utilities.ControlPoint(Deformation.main_scene, 
-	    		  Deformation.original_fig, new Vec(new_v.x,new_v.y,new_v.z));
+	      ControlPoint cp = new ControlPoint(Deformation.main_scene, 
+	    		  Deformation.original_fig, new Vec(new_v.x,new_v.y,new_v.z), Deformation.control_points);
 	      Deformation.control_points.add(cp);
 	      float r_out_x = (int)(Math.random()*100) % 2 == 0 ? (float)(Math.random()*(0.5) + 1) : (float)(-1*(Math.random()*(0.5) + 1));
 	      float r_out_y = (int)(Math.random()*100) % 2 == 0 ? (float)(Math.random()*(0.5) + 1) : (float)(-1*(Math.random()*(0.5) + 1));
@@ -217,28 +189,28 @@ public class LeastSolver {
 	  for(int i = 0; i < 4; i++){
 	    Vec new_f1 = Vec.add(new Vec(0,0,0), movement);
 	    Vec new_f2 = Vec.subtract(new Vec(0,0,0), movement);
-	    Utilities.ControlPoint cp = new Utilities.ControlPoint(
-	    		Deformation.main_scene, Deformation.original_fig, f1[i]);
+	    ControlPoint cp = new ControlPoint(
+	    		Deformation.main_scene, Deformation.original_fig, f1[i], Deformation.control_points);
 	    cp.setB( new_f1);
 	    Deformation.control_points.add(cp);
-	    Utilities.ControlPoint cp2 = new Utilities.ControlPoint(
-	    		Deformation.main_scene, Deformation.original_fig, f2[i]);
+	    ControlPoint cp2 = new ControlPoint(
+	    		Deformation.main_scene, Deformation.original_fig, f2[i], Deformation.control_points);
 	    cp2.setB( new_f2);
 	    Deformation.control_points.add(cp2);
 	  }
-	  Utilities.ControlPoint cp = new Utilities.ControlPoint(
-			  Deformation.main_scene, Deformation.original_fig, f1_c);
+	  ControlPoint cp = new ControlPoint(
+			  Deformation.main_scene, Deformation.original_fig, f1_c, Deformation.control_points);
 	  Deformation.control_points.add(cp);
 	  cp.setB( new_f1_c);
-	  Utilities.ControlPoint cp2 = new Utilities.ControlPoint(
-			  Deformation.main_scene, Deformation.original_fig, f2_c);
+	  ControlPoint cp2 = new ControlPoint(
+			  Deformation.main_scene, Deformation.original_fig, f2_c, Deformation.control_points);
 	  Deformation.control_points.add(cp2);
 	  cp2.setB( new_f2_c);
 	}
 
 	public static void scaleY(boolean clear){
 	  //clear
-	  ArrayList<Utilities.ControlPoint> control_points = Deformation.control_points;
+	  ArrayList<ControlPoint> control_points = Deformation.control_points;
 	  Vec[] r_bounds = Deformation.r_bounds;
 	  InteractiveFrame original_fig = Deformation.original_fig;
 	  Scene main_scene = Deformation.main_scene;
@@ -277,24 +249,24 @@ public class LeastSolver {
 	  for(int i = 0; i < 4; i++){
 	    Vec new_f1 = Vec.add(new Vec(0,0,0), movement);
 	    Vec new_f2 = Vec.subtract(new Vec(0,0,0), movement);
-	    Utilities.ControlPoint cp = new Utilities.ControlPoint(main_scene, original_fig, f1[i]);
+	    ControlPoint cp = new ControlPoint(main_scene, original_fig, f1[i], control_points);
 	    control_points.add(cp);
 	    cp.setB( new_f1);
-	    Utilities.ControlPoint cp2 = new Utilities.ControlPoint(main_scene, original_fig, f2[i]);
+	    ControlPoint cp2 = new ControlPoint(main_scene, original_fig, f2[i], control_points);
 	    control_points.add(cp2);
 	    cp2.setB( new_f2);
 	  }
-	  Utilities.ControlPoint cp = new Utilities.ControlPoint(main_scene, original_fig, f1_c);
+	  ControlPoint cp = new ControlPoint(main_scene, original_fig, f1_c, control_points);
 	  control_points.add(cp);
 	  cp.setB( new_f1_c);
-	  Utilities.ControlPoint cp2 = new Utilities.ControlPoint(main_scene, original_fig, f2_c);
+	  ControlPoint cp2 = new ControlPoint(main_scene, original_fig, f2_c, control_points);
 	  control_points.add(cp2);
 	  cp2.setB( new_f2_c);
 	}
 
 	public static void scaleZ(boolean clear){
 	  //clear
-	  ArrayList<Utilities.ControlPoint> control_points = Deformation.control_points;
+	  ArrayList<ControlPoint> control_points = Deformation.control_points;
 	  Vec[] r_bounds = Deformation.r_bounds;
 	  InteractiveFrame original_fig = Deformation.original_fig;
 	  Scene main_scene = Deformation.main_scene;
@@ -333,24 +305,24 @@ public class LeastSolver {
 	  for(int i = 0; i < 4; i++){
 	    Vec new_f1 = Vec.add(new Vec(0,0,0), movement);
 	    Vec new_f2 = Vec.subtract(new Vec(0,0,0), movement);
-	    Utilities.ControlPoint cp = new Utilities.ControlPoint(main_scene, original_fig, f1[i]);
+	    ControlPoint cp = new ControlPoint(main_scene, original_fig, f1[i], control_points);
 	    control_points.add(cp);
 	    cp.setB( new_f1);
-	    Utilities.ControlPoint cp2 = new Utilities.ControlPoint(main_scene, original_fig, f2[i]);
+	    ControlPoint cp2 = new ControlPoint(main_scene, original_fig, f2[i], control_points);
 	    control_points.add(cp2);
 	    cp2.setB( new_f2);
 	  }
-	  Utilities.ControlPoint cp = new Utilities.ControlPoint(main_scene, original_fig, f1_c);
+	  ControlPoint cp = new ControlPoint(main_scene, original_fig, f1_c, control_points);
 	  control_points.add(cp);
 	  cp.setB( new_f1_c);
-	  Utilities.ControlPoint cp2 = new Utilities.ControlPoint(main_scene, original_fig, f2_c);
+	  ControlPoint cp2 = new ControlPoint(main_scene, original_fig, f2_c, control_points);
 	  control_points.add(cp2);
 	  cp2.setB( new_f2_c);
 	}
 
 	public static void applyHorizontalZXSpline(boolean clear){
 	  //clear
-	  ArrayList<Utilities.ControlPoint> control_points = Deformation.control_points;
+	  ArrayList<ControlPoint> control_points = Deformation.control_points;
 	  Vec[] r_bounds = Deformation.r_bounds;
 	  InteractiveFrame original_fig = Deformation.original_fig;
 	  Scene main_scene = Deformation.main_scene;
@@ -385,7 +357,7 @@ public class LeastSolver {
 	  float y_pos = y_mode + Utilities.random(-r_h*1.f/mod_factor, r_h*1.f/mod_factor);
 	  int c = 0;
 	  for(PVector point : spline_control){
-	    Utilities.ControlPoint cp = new Utilities.ControlPoint(main_scene, original_fig, new Vec(point.x, y_pos, point.z));
+	    ControlPoint cp = new ControlPoint(main_scene, original_fig, new Vec(point.x, y_pos, point.z), control_points);
 	    control_points.add(cp);
 	    cp.setB( new Vec(0, spline_control.get(c).y - y_pos, 0));
 	    c++;
@@ -396,14 +368,14 @@ public class LeastSolver {
 	  y_pos = -(y_pos - y_mode) + inv_y_mode; 
 	  for(int i = 0; i < spline_control.size(); i++){
 	    PVector point = new PVector(spline_control.get(i).x, spline_control.get(i).y, spline_control.get(i).z);
-	    Utilities.ControlPoint cp = new Utilities.ControlPoint(main_scene, original_fig, new Vec(point.x, y_pos, point.z));
+	    ControlPoint cp = new ControlPoint(main_scene, original_fig, new Vec(point.x, y_pos, point.z), control_points);
 	    control_points.add(cp);
 	    point.y = -(point.y - y_mode) + inv_y_mode;
 	    cp.setB( new Vec(0, point.y - y_pos, 0));
 	  }
 	  //add 2 anchor points
-	  Utilities.ControlPoint cp = new Utilities.ControlPoint(main_scene, original_fig, new Vec((min_x + max_x)/2.f, (min_y + max_y)/2.f, min_z));
-	  Utilities.ControlPoint cp2 = new Utilities.ControlPoint(main_scene, original_fig, new Vec((min_x + max_x)/2.f, (min_y + max_y)/2.f, max_z));  
+	  ControlPoint cp = new ControlPoint(main_scene, original_fig, new Vec((min_x + max_x)/2.f, (min_y + max_y)/2.f, min_z), control_points);
+	  ControlPoint cp2 = new ControlPoint(main_scene, original_fig, new Vec((min_x + max_x)/2.f, (min_y + max_y)/2.f, max_z), control_points);  
 	  control_points.add(cp);
 	  control_points.add(cp2);
 	  cp.setB( new Vec(0,0,0));
@@ -412,7 +384,7 @@ public class LeastSolver {
 
 	public static void applyVerticalZXSpline(boolean clear){
 	  //clear
-	  ArrayList<Utilities.ControlPoint> control_points = Deformation.control_points;
+	  ArrayList<ControlPoint> control_points = Deformation.control_points;
 	  Vec[] r_bounds = Deformation.r_bounds;
 	  InteractiveFrame original_fig = Deformation.original_fig;
 	  Scene main_scene = Deformation.main_scene;
@@ -447,7 +419,7 @@ public class LeastSolver {
 	  float y_pos = y_mode + Utilities.random(-r_h*1.f/mod_factor, r_h*1.f/mod_factor);
 	  int c = 0;
 	  for(PVector point : spline_control){
-	    Utilities.ControlPoint cp = new Utilities.ControlPoint(main_scene, original_fig, new Vec(point.x, y_pos, point.z));
+	    ControlPoint cp = new ControlPoint(main_scene, original_fig, new Vec(point.x, y_pos, point.z), control_points);
 	    control_points.add(cp);
 	    cp.setB( new Vec(0, spline_control.get(c).y - y_pos, 0));
 	    c++;
@@ -459,14 +431,14 @@ public class LeastSolver {
 	  y_pos = -(y_pos - y_mode) + inv_y_mode; 
 	  for(int i = 0; i < spline_control.size(); i++){
 	    PVector point = new PVector(spline_control.get(i).x, spline_control.get(i).y, spline_control.get(i).z);
-	    Utilities.ControlPoint cp = new Utilities.ControlPoint(main_scene, original_fig, new Vec(point.x, y_pos, point.z));
+	    ControlPoint cp = new ControlPoint(main_scene, original_fig, new Vec(point.x, y_pos, point.z), control_points);
 	    control_points.add(cp);
 	    point.y = -(point.y - y_mode) + inv_y_mode;
 	    cp.setB( new Vec(0, point.y - y_pos, 0));
 	  }
 	  //add 2 anchor points
-	  Utilities.ControlPoint cp = new Utilities.ControlPoint(main_scene, original_fig, new Vec(min_x, (min_y + max_y)/2.f, (min_z + max_z)/2.f));
-	  Utilities.ControlPoint cp2 = new Utilities.ControlPoint(main_scene, original_fig, new Vec(max_x, (min_y + max_y)/2.f, (min_z + max_z)/2.f));  
+	  ControlPoint cp = new ControlPoint(main_scene, original_fig, new Vec(min_x, (min_y + max_y)/2.f, (min_z + max_z)/2.f), control_points);
+	  ControlPoint cp2 = new ControlPoint(main_scene, original_fig, new Vec(max_x, (min_y + max_y)/2.f, (min_z + max_z)/2.f), control_points);  
 	  control_points.add(cp);
 	  control_points.add(cp2);
 	  cp.setB( new Vec(0,0,0));
@@ -477,7 +449,7 @@ public class LeastSolver {
 
 	public static void applyHorizontalYZSpline(boolean clear){
 	  //clear
-	  ArrayList<Utilities.ControlPoint> control_points = Deformation.control_points;
+	  ArrayList<ControlPoint> control_points = Deformation.control_points;
 	  Vec[] r_bounds = Deformation.r_bounds;
 	  InteractiveFrame original_fig = Deformation.original_fig;
 	  Scene main_scene = Deformation.main_scene;
@@ -511,7 +483,7 @@ public class LeastSolver {
 	  float x_pos = x_mode + Utilities.random(-r_w*1.f/mod_factor, r_w*1.f/mod_factor);
 	  int c = 0;
 	  for(PVector point : spline_control){
-	    Utilities.ControlPoint cp = new Utilities.ControlPoint(main_scene, original_fig, new Vec(x_pos, point.y, point.z));
+	    ControlPoint cp = new ControlPoint(main_scene, original_fig, new Vec(x_pos, point.y, point.z), control_points);
 	    control_points.add(cp);
 	    cp.setB( new Vec(spline_control.get(c).x - x_pos, 0, 0));
 	    c++;
@@ -522,14 +494,14 @@ public class LeastSolver {
 	  x_pos = -(x_pos - x_mode) + inv_x_mode; 
 	  for(int i = 0; i < spline_control.size(); i++){
 	    PVector point = new PVector(spline_control.get(i).x, spline_control.get(i).y, spline_control.get(i).z);
-	    Utilities.ControlPoint cp = new Utilities.ControlPoint(main_scene, original_fig, new Vec(x_pos, point.y, point.z));
+	    ControlPoint cp = new ControlPoint(main_scene, original_fig, new Vec(x_pos, point.y, point.z), control_points);
 	    control_points.add(cp);
 	    point.x = -(point.x - x_mode) + inv_x_mode;
 	    cp.setB( new Vec(point.x - x_pos, 0,0));
 	  }
 	  //add 2 anchor points
-	  Utilities.ControlPoint cp = new Utilities.ControlPoint(main_scene, original_fig, new Vec((min_x + max_x)/2.f, min_y, (min_z + max_z)/2.f));
-	  Utilities.ControlPoint cp2 = new Utilities.ControlPoint(main_scene, original_fig, new Vec((min_x + max_x)/2.f, max_y, (min_z + max_z)/2.f));  
+	  ControlPoint cp = new ControlPoint(main_scene, original_fig, new Vec((min_x + max_x)/2.f, min_y, (min_z + max_z)/2.f), control_points);
+	  ControlPoint cp2 = new ControlPoint(main_scene, original_fig, new Vec((min_x + max_x)/2.f, max_y, (min_z + max_z)/2.f), control_points);  
 	  control_points.add(cp);
 	  control_points.add(cp2);
 	  cp.setB( new Vec(0,0,0));
@@ -538,7 +510,7 @@ public class LeastSolver {
 
 	public static void applyVerticalYZSpline(boolean clear){
 	  //clear
-	  ArrayList<Utilities.ControlPoint> control_points = Deformation.control_points;
+	  ArrayList<ControlPoint> control_points = Deformation.control_points;
 	  Vec[] r_bounds = Deformation.r_bounds;
 	  InteractiveFrame original_fig = Deformation.original_fig;
 	  Scene main_scene = Deformation.main_scene;
@@ -572,7 +544,7 @@ public class LeastSolver {
 	  float x_pos = x_mode + Utilities.random(-r_w*1.f/mod_factor, r_w*1.f/mod_factor);
 	  int c = 0;
 	  for(PVector point : spline_control){
-	    Utilities.ControlPoint cp = new Utilities.ControlPoint(main_scene, original_fig, new Vec(x_pos, point.y, point.z));
+	    ControlPoint cp = new ControlPoint(main_scene, original_fig, new Vec(x_pos, point.y, point.z), control_points);
 	    control_points.add(cp);
 	    cp.setB( new Vec(spline_control.get(c).x - x_pos, 0,0));
 	    c++;
@@ -583,14 +555,14 @@ public class LeastSolver {
 	  x_pos = -(x_pos - x_mode) + inv_x_mode; 
 	  for(int i = 0; i < spline_control.size(); i++){
 	    PVector point = new PVector(spline_control.get(i).x, spline_control.get(i).y, spline_control.get(i).z);
-	    Utilities.ControlPoint cp = new Utilities.ControlPoint(main_scene, original_fig, new Vec(x_pos, point.y, point.z));
+	    ControlPoint cp = new ControlPoint(main_scene, original_fig, new Vec(x_pos, point.y, point.z), control_points);
 	    control_points.add(cp);
 	    point.x = -(point.x - x_mode) + inv_x_mode;
 	    cp.setB( new Vec(point.x - x_pos, 0,0));
 	  }
 	  //add 2 anchor points
-	  Utilities.ControlPoint cp = new Utilities.ControlPoint(main_scene, original_fig, new Vec((min_x + max_x)/2.f, (min_y + max_y)/2.f, min_z));
-	  Utilities.ControlPoint cp2 = new Utilities.ControlPoint(main_scene, original_fig, new Vec((min_x + max_x)/2.f, (min_y + max_y)/2.f, max_z));  
+	  ControlPoint cp = new ControlPoint(main_scene, original_fig, new Vec((min_x + max_x)/2.f, (min_y + max_y)/2.f, min_z), control_points);
+	  ControlPoint cp2 = new ControlPoint(main_scene, original_fig, new Vec((min_x + max_x)/2.f, (min_y + max_y)/2.f, max_z), control_points);  
 	  control_points.add(cp);
 	  control_points.add(cp2);
 	  cp.setB( new Vec(0,0,0));
@@ -599,7 +571,7 @@ public class LeastSolver {
 
 	public static void applyVerticalXYSpline(boolean clear){
 	  //clear
-	  ArrayList<Utilities.ControlPoint> control_points = Deformation.control_points;
+	  ArrayList<ControlPoint> control_points = Deformation.control_points;
 	  Vec[] r_bounds = Deformation.r_bounds;
 	  InteractiveFrame original_fig = Deformation.original_fig;
 	  Scene main_scene = Deformation.main_scene;
@@ -633,7 +605,7 @@ public class LeastSolver {
 	  float z_pos = z_mode + Utilities.random(-r_l*1.f/mod_factor, r_l*1.f/mod_factor);
 	  int c = 0;
 	  for(PVector point : spline_control){
-	    Utilities.ControlPoint cp = new Utilities.ControlPoint(main_scene, original_fig, new Vec(point.x, point.y, z_pos));
+	    ControlPoint cp = new ControlPoint(main_scene, original_fig, new Vec(point.x, point.y, z_pos), control_points);
 	    control_points.add(cp);
 	    cp.setB( new Vec(0, 0, spline_control.get(c).z - z_pos));
 	    c++;
@@ -644,14 +616,14 @@ public class LeastSolver {
 	  z_pos = -(z_pos - z_mode) + inv_z_mode; 
 	  for(int i = 0; i < spline_control.size(); i++){
 	    PVector point = new PVector(spline_control.get(i).x, spline_control.get(i).y, spline_control.get(i).z);
-	    Utilities.ControlPoint cp = new Utilities.ControlPoint(main_scene, original_fig, new Vec(point.x, point.y, z_pos));
+	    ControlPoint cp = new ControlPoint(main_scene, original_fig, new Vec(point.x, point.y, z_pos), control_points);
 	    control_points.add(cp);
 	    point.z = -(point.z - z_mode) + inv_z_mode;
 	    cp.setB( new Vec(0, 0, point.z - z_pos));
 	  }
 	  //add 2 anchor points
-	  Utilities.ControlPoint cp = new Utilities.ControlPoint(main_scene, original_fig, new Vec(min_x, (min_y + max_y)/2.f, (min_z + max_z)/2.f));
-	  Utilities.ControlPoint cp2 = new Utilities.ControlPoint(main_scene, original_fig, new Vec(max_x, (min_y + max_y)/2.f, (min_z + max_z)/2.f));  
+	  ControlPoint cp = new ControlPoint(main_scene, original_fig, new Vec(min_x, (min_y + max_y)/2.f, (min_z + max_z)/2.f), control_points);
+	  ControlPoint cp2 = new ControlPoint(main_scene, original_fig, new Vec(max_x, (min_y + max_y)/2.f, (min_z + max_z)/2.f), control_points);  
 	  control_points.add(cp);
 	  control_points.add(cp2);
 	  cp.setB( new Vec(0,0,0));
@@ -660,7 +632,7 @@ public class LeastSolver {
 
 	public static void applyHorizontalXYSpline(boolean clear){
 	  //clear
-	  ArrayList<Utilities.ControlPoint> control_points = Deformation.control_points;
+	  ArrayList<ControlPoint> control_points = Deformation.control_points;
 	  Vec[] r_bounds = Deformation.r_bounds;
 	  InteractiveFrame original_fig = Deformation.original_fig;
 	  Scene main_scene = Deformation.main_scene;
@@ -695,7 +667,7 @@ public class LeastSolver {
 	  float z_pos = z_mode + Utilities.random(-r_l*1.f/mod_factor, r_l*1.f/mod_factor);
 	  int c = 0;
 	  for(PVector point : spline_control){
-	    Utilities.ControlPoint cp = new Utilities.ControlPoint(main_scene, original_fig, new Vec(point.x, point.y, z_pos));
+	    ControlPoint cp = new ControlPoint(main_scene, original_fig, new Vec(point.x, point.y, z_pos), control_points);
 	    control_points.add(cp);
 	    cp.setB( new Vec(0,0, spline_control.get(c).z - z_pos));
 	    c++;
@@ -706,14 +678,14 @@ public class LeastSolver {
 	  z_pos = -(z_pos - z_mode) + inv_z_mode; 
 	  for(int i = 0; i < spline_control.size(); i++){
 	    PVector point = new PVector(spline_control.get(i).x, spline_control.get(i).y, spline_control.get(i).z);
-	    Utilities.ControlPoint cp = new Utilities.ControlPoint(main_scene, original_fig, new Vec(point.x, point.y, z_pos));
+	    ControlPoint cp = new ControlPoint(main_scene, original_fig, new Vec(point.x, point.y, z_pos), control_points);
 	    control_points.add(cp);
 	    point.z = -(point.z - z_mode) + inv_z_mode;
 	    cp.setB( new Vec(0,0, point.z - z_pos));
 	  }
 	  //add 2 anchor points
-	  Utilities.ControlPoint cp = new Utilities.ControlPoint(main_scene, original_fig, new Vec((min_x + max_x)/2.f, min_y, (min_z + max_z)/2.f));
-	  Utilities.ControlPoint cp2 = new Utilities.ControlPoint(main_scene, original_fig, new Vec((min_x + max_x)/2.f, max_y, (min_z + max_z)/2.f));  
+	  ControlPoint cp = new ControlPoint(main_scene, original_fig, new Vec((min_x + max_x)/2.f, min_y, (min_z + max_z)/2.f), control_points);
+	  ControlPoint cp2 = new ControlPoint(main_scene, original_fig, new Vec((min_x + max_x)/2.f, max_y, (min_z + max_z)/2.f), control_points);  
 	  control_points.add(cp);
 	  control_points.add(cp2);
 	  cp.setB( new Vec(0,0,0));
@@ -721,7 +693,7 @@ public class LeastSolver {
 	}
 
 	public static void combination(){
-	  ArrayList<Utilities.ControlPoint> control_points = Deformation.control_points;
+	  ArrayList<ControlPoint> control_points = Deformation.control_points;
   	  ArrayList<PVector> new_img = new ArrayList<PVector>();
 	  new_img.addAll(Deformation.vertices);
 	  //splineht
