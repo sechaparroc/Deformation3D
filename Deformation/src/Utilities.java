@@ -288,26 +288,5 @@ public class Utilities {
 
 	  }
 	  
-	  public ArrayList<PVector> getVertices(ArrayList<PVector> vertices){
-	    ArrayList<PVector> new_vertices = new ArrayList<PVector>(); 
-	    Deformation.selected_vertices_i = new ArrayList<Integer>();
-	    sortCorners();
-	    System.out.println("--init : " + init);
-	    System.out.println("--end : " + end);
-	    int c = 0;
-	    for(PVector i : vertices){
-	      Vec v = new Vec(i.x,i.y,i.z);
-	      v = Deformation.original_fig.inverseCoordinatesOf(v);
-	      v = Deformation.main_scene.eye().projectedCoordinatesOf(v);
-	      if(v.vec[0] >= init.vec[0] && v.vec[0] <= end.vec[0]){
-	        if(v.vec[1] >= init.vec[1] && v.vec[1] <= end.vec[1]){
-	          new_vertices.add(i);         
-	          Deformation.selected_vertices_i.add(c);          
-	        }
-	      }
-	      c++;
-	    }
-	    return new_vertices;
-	  }
 	}
 }

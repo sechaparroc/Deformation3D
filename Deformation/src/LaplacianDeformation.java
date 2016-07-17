@@ -37,18 +37,18 @@ import remixlab.dandelion.geom.Vec;
 
 
 public class LaplacianDeformation {
-	static HashMap<PVector, Vertex> vertices;
-	static ArrayList<Face> faces;	
-	static ArrayList<Edge> edges;	
-	static HashMap<Vertex,Anchor> anchors;
-	static LinkedSparseMatrix A, L, M;
-	static boolean debug = true;
+	private HashMap<PVector, Vertex> vertices;
+	private ArrayList<Face> faces;	
+	private ArrayList<Edge> edges;	
+	private HashMap<Vertex,Anchor> anchors;
+	private LinkedSparseMatrix A, L, M;
+	private boolean debug = true;
 	
 	public static class Anchor{
-		Vertex vertex;
-		ControlPoint control_point;
-		PVector pos;
-		int idx;//id of the control point
+		private Vertex vertex;
+		private ControlPoint control_point;
+		private PVector pos;
+		private int idx;//id of the control point
 		
 		public Anchor(Vertex vv, ControlPoint cp, int ii){
 			control_point = cp;
@@ -57,22 +57,58 @@ public class LaplacianDeformation {
 		}
 		
 		public void updatePosition(){
-		    Vec ci = Deformation.original_fig.coordinatesOfFrom(new Vec(0,0,0),control_point);   
-		    Vec cf = Deformation.original_fig.coordinatesOfFrom(control_point.B,control_point);
+		    Vec ci = control_point.translation();   
+		    Vec cf = control_point.localInverseCoordinatesOf(control_point.getB()); 
 		    PVector i = new PVector(ci.x(), ci.y(), ci.z());
 		    PVector f = new PVector(cf.x(), cf.y(), cf.z());		    
 		    pos = PVector.sub(f, i);
 			pos.add(vertex.v);
 		}
+
+		public Vertex getVertex() {
+			return vertex;
+		}
+
+		public void setVertex(Vertex vertex) {
+			this.vertex = vertex;
+		}
+
+		public ControlPoint getControl_point() {
+			return control_point;
+		}
+
+		public void setControl_point(ControlPoint control_point) {
+			this.control_point = control_point;
+		}
+
+		public PVector getPos() {
+			return pos;
+		}
+
+		public void setPos(PVector pos) {
+			this.pos = pos;
+		}
+
+		public int getIdx() {
+			return idx;
+		}
+
+		public void setIdx(int idx) {
+			this.idx = idx;
+		}
 	}
 	
 	public static class Face{
-		ArrayList<Vertex> vertices = new ArrayList<Vertex>();
+		private ArrayList<Vertex> vertices = new ArrayList<Vertex>();
+
+		public boolean addvertex(Vertex v){
+			return vertices.add(v);
+		}
 	}
 
 	public static class Edge{
-		Vertex v1;
-		Vertex v2;
+		private Vertex v1;
+		private Vertex v2;
 		
 		public Edge(Vertex v, Vertex u){
 			v1 = v;
@@ -81,13 +117,13 @@ public class LaplacianDeformation {
 	}
 	
 	public static class Vertex{
-		PVector v; //vertex position
-		PVector d; //laplacian coordinates
-		ArrayList<int[]> idx_shape;
-		int idx; //according to the way in which the vertices are traversed
-		ArrayList<Vertex> neighbors;		
-		ArrayList<Face> faces;		
-		ArrayList<Edge> edges;		
+		private PVector v; //vertex position
+		private PVector d; //laplacian coordinates
+		private ArrayList<int[]> idx_shape;
+		private int idx; //according to the way in which the vertices are traversed
+		private ArrayList<Vertex> neighbors;		
+		private ArrayList<Face> faces;		
+		private ArrayList<Edge> edges;		
 		
 		public Vertex(PVector vv, int is, int ic, int idx){
 			v = vv;			
@@ -107,21 +143,38 @@ public class LaplacianDeformation {
 			if(!neighbors.contains(n)) neighbors.add(n);
 			if(!n.neighbors.contains(this)) n.neighbors.add(this);
 		}
+
+		public ArrayList<int[]> getIdx_shape() {
+			return idx_shape;
+		}
+
+		public void setIdx_shape(ArrayList<int[]> idx_shape) {
+			this.idx_shape = idx_shape;
+		}
+
+		public int getIdx() {
+			return idx;
+		}
+
+		public void setIdx(int idx) {
+			this.idx = idx;
+		}
+	
 	}
 	
-	public static void addEdge(LinkedSparseMatrix A, Vertex v1, Vertex v2){
+	public void addEdge(LinkedSparseMatrix A, Vertex v1, Vertex v2){
 		//The whole vetex is used as arg if its desired to use other weight scheme
 		A.set(v1.idx, v2.idx, 1);
 		A.set(v2.idx, v1.idx, 1);		
 	}
 	
-	public static void setup(PShape shape){
+	public void setup(PShape shape){
 		getNeighbors(shape);
 		getLaplacian();
 		anchors = new HashMap<Vertex,Anchor>();
 	}
 	
-	public static void getNeighbors(PShape shape){
+	public void getNeighbors(PShape shape){
 		//A = new SparseDataset();
 		vertices = new HashMap<PVector,Vertex>();
 		edges = new ArrayList<Edge>();
@@ -171,7 +224,7 @@ public class LaplacianDeformation {
 		
 	}
 	
-	public static void getLaplacian(){
+	public void getLaplacian(){
 		int n = vertices.size();
 		//M is used as the matrix to get the new positions of the vertices
 		M = new LinkedSparseMatrix(3*n,3*n);
@@ -200,7 +253,7 @@ public class LaplacianDeformation {
 		if(debug) printSparseMat("Initial M", M, 30, 30);		
 	}
 	
-	public static Vertex getNearest(PVector p){
+	public Vertex getNearest(PVector p){
 		float min_dist = 99999;
 		Vertex min = null;
 		for(Vertex v : vertices.values()){
@@ -212,10 +265,10 @@ public class LaplacianDeformation {
 		return min;
 	}
 	
-	public static void addAnchors(ArrayList<ControlPoint> cps){
+	public void addAnchors(ArrayList<ControlPoint> cps){
 		addAnchors(cps, false);
 	}
-	public static void addAnchors(ArrayList<ControlPoint> cps, boolean reset){
+	public void addAnchors(ArrayList<ControlPoint> cps, boolean reset){
 		if(reset) anchors.clear();
 		int i = 0;
 		for(ControlPoint cp : cps){
@@ -223,9 +276,9 @@ public class LaplacianDeformation {
 		}
 	}
 	
-	public static void addAnchor(ControlPoint cp, int i){
+	public void addAnchor(ControlPoint cp, int i){
 		//get the nearest point
-	    Vec ci = Deformation.original_fig.coordinatesOfFrom(new Vec(0,0,0),cp);   
+	    Vec ci = cp.translation();   
 	    PVector p = new PVector(ci.x(), ci.y(), ci.z());		
 		Vertex v = getNearest(p);
 		Anchor anchor = new Anchor(v, cp, i);
@@ -250,7 +303,7 @@ public class LaplacianDeformation {
 		}
 	}
 	
-	public static void calculateLaplacian(){
+	public void calculateLaplacian(){
 		int n = vertices.size();	
 		if(debug) printSparseMat("laplacian",L,30,30);
 		for(Vertex v_i : vertices.values()){
@@ -332,14 +385,14 @@ public class LaplacianDeformation {
 		}
 	}		
 	
-	public static ArrayList<PVector> solveLaplacian(){
+	public ArrayList<PVector> solveLaplacian(){
 		int n = vertices.size();			
 		int m_dim = M.numColumns();
 		
 		LinkedSparseMatrix M   = new LinkedSparseMatrix(m_dim + 3*anchors.size(), m_dim);
 		LinkedSparseMatrix M_T = new LinkedSparseMatrix(m_dim, m_dim  + 3*anchors.size());
 		
-		for(MatrixEntry e : LaplacianDeformation.M){
+		for(MatrixEntry e : this.M){
 			int row = e.row();
 			int col = e.column();
 			M.set(row, col, e.get());			
@@ -498,4 +551,46 @@ public class LaplacianDeformation {
 		}
 		return result;
 	}
+
+	//Getters & Setters----------------------------
+	public HashMap<PVector, Vertex> getVertices() {
+		return vertices;
+	}
+
+	public void setVertices(HashMap<PVector, Vertex> vertices) {
+		this.vertices = vertices;
+	}
+
+	public ArrayList<Face> getFaces() {
+		return faces;
+	}
+
+	public void setFaces(ArrayList<Face> faces) {
+		this.faces = faces;
+	}
+
+	public ArrayList<Edge> getEdges() {
+		return edges;
+	}
+
+	public void setEdges(ArrayList<Edge> edges) {
+		this.edges = edges;
+	}
+
+	public HashMap<Vertex, Anchor> getAnchors() {
+		return anchors;
+	}
+
+	public void setAnchors(HashMap<Vertex, Anchor> anchors) {
+		this.anchors = anchors;
+	}
+
+	public boolean isDebug() {
+		return debug;
+	}
+
+	public void setDebug(boolean debug) {
+		this.debug = debug;
+	}
+	//---------------------------------------------
 }

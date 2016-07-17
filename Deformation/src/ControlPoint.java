@@ -20,18 +20,22 @@ import remixlab.proscene.Scene;
  * */
 public class ControlPoint extends InteractiveFrame{
   public static float RADIUS_POINT = 15;
-  Vec B;
+  private Vec B;
   private float radius;
   private PShape p;
   private ArrayList<ControlPoint> control_points;
   private int selected_section = 0;  
   
-  private Class<?> actionClass = null;
+  private Object actionObject = null;
   private Method actionMethod = null;
   
   @Override
   public Scene scene() {
     return (Scene) gScene;
+  }
+  
+  public Vec getB(){
+	  return B;
   }
   
   public void setB(Vec B){
@@ -88,10 +92,10 @@ public class ControlPoint extends InteractiveFrame{
     setupProfile();
   }
 
-  public void setAction(Class<?> cls, String methodName) {
+  public void setAction(Object obj, String methodName) {
     try {
-      actionMethod = cls.getMethod(methodName, null);
-      actionClass = cls;
+      actionMethod = obj.getClass().getMethod(methodName, null);
+      actionObject = obj;
     } catch (Exception e) {
       PApplet.println("Something went wrong when registering your " + methodName + " method");
       e.printStackTrace();
@@ -99,9 +103,9 @@ public class ControlPoint extends InteractiveFrame{
   }	  
 
   protected boolean executeAction() {
-    if (actionClass != null) {
+    if (actionObject != null) {
       try {
-        actionMethod.invoke(null, null);
+        actionMethod.invoke(actionObject, null);
         return true;
       } catch (Exception e) {
         PApplet.println("Something went wrong when invoking your " + drawHandlerMethod.getName() + " method");
@@ -112,10 +116,6 @@ public class ControlPoint extends InteractiveFrame{
     return false;
   }	  
   
-  public void executeActions(){
-      LeastSolver.updateControlPoints();
-      Deformation.morphTransformationAction();    
-  }
   
   public boolean IsInsideA(Vec v){
     return Vec.distance(v, position()) <= radius ? true : false;
@@ -183,7 +183,7 @@ public class ControlPoint extends InteractiveFrame{
     if(selected_section == 1){
     	customTranslation(event);
     }
-    if(event.flushed()) Deformation.morphTransformationAction();
+    if(event.flushed()) executeAction();
   }
   
   
@@ -198,6 +198,7 @@ public class ControlPoint extends InteractiveFrame{
     if(v == B){
     	customTranslation(event);
     }
+    if(event.flushed()) executeAction();
   }
 
   public void customTranslation(DOF2Event event){
