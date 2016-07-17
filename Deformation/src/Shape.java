@@ -172,7 +172,10 @@ public class Shape {
 	//SOME PREDEFINED DEFORMATIONS
 	public void addControlPointsAuto(boolean rand){
 	  //clear
-	  this.control_points.clear();
+	  while(!control_points.isEmpty()){
+		  scene.inputHandler().removeGrabber(control_points.get(0));
+		  control_points.remove(0);
+	  }
 	  for(int i = 0; i < vertices.size(); i+= step_per_point){
 	    //get coordinates in local frame
 	    if(!rand){
@@ -203,7 +206,10 @@ public class Shape {
 	public void scaleX(boolean clear){
 	  //clear
 	  if(clear){
-		  control_points.clear();
+		  while(!control_points.isEmpty()){
+			  scene.inputHandler().removeGrabber(control_points.get(0));
+			  control_points.remove(0);
+		  }
 	  }  
 	  float r_width = r_bounds[1].x() - r_bounds[0].x();
 	  if(r_width < 0) r_width = -1*r_width;
@@ -265,7 +271,10 @@ public class Shape {
 	public void scaleY(boolean clear){
 	  //clear
 	  if(clear){
-	    control_points.clear();
+		  while(!control_points.isEmpty()){
+			  scene.inputHandler().removeGrabber(control_points.get(0));
+			  control_points.remove(0);
+		  }
 	  }  
 	  float r_width = r_bounds[1].y() - r_bounds[0].y();
 	  if(r_width < 0) r_width = -1*r_width;
@@ -320,7 +329,10 @@ public class Shape {
 	public void scaleZ(boolean clear){
 	  //clear
 	  if(clear){
-	    control_points.clear();
+		  while(!control_points.isEmpty()){
+			  scene.inputHandler().removeGrabber(control_points.get(0));
+			  control_points.remove(0);
+		  }
 	  }  
 	  float r_width = r_bounds[1].z() - r_bounds[0].z();
 	  if(r_width < 0) r_width = -1*r_width;
@@ -375,7 +387,10 @@ public class Shape {
 	public void applyHorizontalZXSpline(boolean clear){
 	  //clear
 	  if(clear){
-	    control_points.clear();
+		  while(!control_points.isEmpty()){
+			  scene.inputHandler().removeGrabber(control_points.get(0));
+			  control_points.remove(0);
+		  }
 	  }
 	  ArrayList<PVector> spline_control = new ArrayList<PVector>();
 
@@ -436,7 +451,10 @@ public class Shape {
 	public void applyVerticalZXSpline(boolean clear){
 	  //clear
 	  if(clear){
-	    control_points.clear();
+		  while(!control_points.isEmpty()){
+			  scene.inputHandler().removeGrabber(control_points.get(0));
+			  control_points.remove(0);
+		  }
 	  }
 	  ArrayList<PVector> spline_control = new ArrayList<PVector>();
 
@@ -500,7 +518,10 @@ public class Shape {
 	public void applyHorizontalYZSpline(boolean clear){
 	  //clear
 	  if(clear){
-	    control_points.clear();
+		  while(!control_points.isEmpty()){
+			  scene.inputHandler().removeGrabber(control_points.get(0));
+			  control_points.remove(0);
+		  }
 	  }
 	  ArrayList<PVector> spline_control = new ArrayList<PVector>();
 
@@ -561,7 +582,10 @@ public class Shape {
 	public void applyVerticalYZSpline(boolean clear){
 	  //clear
 	  if(clear){
-	    control_points.clear();
+		  while(!control_points.isEmpty()){
+			  scene.inputHandler().removeGrabber(control_points.get(0));
+			  control_points.remove(0);
+		  }
 	  }
 	  ArrayList<PVector> spline_control = new ArrayList<PVector>();
 
@@ -622,7 +646,10 @@ public class Shape {
 	public void applyVerticalXYSpline(boolean clear){
 	  //clear
   	  if(clear){
-	    control_points.clear();
+		  while(!control_points.isEmpty()){
+			  scene.inputHandler().removeGrabber(control_points.get(0));
+			  control_points.remove(0);
+		  }
 	  }
 	  ArrayList<PVector> spline_control = new ArrayList<PVector>();
 
@@ -683,7 +710,10 @@ public class Shape {
 	public void applyHorizontalXYSpline(boolean clear){
 	  //clear
 	  if(clear){
-	    control_points.clear();
+		  while(!control_points.isEmpty()){
+			  scene.inputHandler().removeGrabber(control_points.get(0));
+			  control_points.remove(0);
+		  }
 	  }
 	  ArrayList<PVector> spline_control = new ArrayList<PVector>();
 
