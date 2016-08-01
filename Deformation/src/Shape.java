@@ -48,7 +48,11 @@ public class Shape {
 		PShape figure;
 		if(path.equals("") || debug) 
 			figure = getDebugFigure();
-		else figure = ap.loadShape(path);
+		else{
+			figure = ap.loadShape(path);
+		    figure = Utilities.cloneShape(ap, figure, ap.color(255,0,0));
+			
+		}
 	    PShape deformed_figure = Utilities.cloneShape(ap, figure, ap.color(100,0,130));
 	    figure.setFill(ap.color(255,0,0));
 	    deformed_figure.setFill(ap.color(100,0,130));

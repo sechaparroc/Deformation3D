@@ -108,7 +108,7 @@ public class ControlPoint extends InteractiveFrame{
         actionMethod.invoke(actionObject, null);
         return true;
       } catch (Exception e) {
-        PApplet.println("Something went wrong when invoking your " + drawHandlerMethod.getName() + " method");
+        PApplet.println("Something went wrong when invoking your " + actionMethod.getName() + " method");
         e.printStackTrace();
         return false;
       }
@@ -231,18 +231,4 @@ public class ControlPoint extends InteractiveFrame{
 	  setShape(p);
   }
   
-  public void drawShape(){
-	  PGraphics p = scene().pApplet().g;
-      p.pushStyle();
-      p.stroke(255,255,255);
-      Vec aux = B;
-      p.line(0,0,0,aux.x(), aux.y(), aux.z());
-      p.stroke(0,0,255);
-      p.strokeWeight(radius);
-      p.point(aux.x(), aux.y(), aux.z());
-      //translate(aux.x(), aux.y(), aux.z());
-      p.stroke(0,255,0);
-      p.point(0,0,0);
-      p.popStyle();
-  }
 }
