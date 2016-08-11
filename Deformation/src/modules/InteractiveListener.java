@@ -1,4 +1,4 @@
-package controller;
+package modules;
 
 import interactive.Interactive;
 

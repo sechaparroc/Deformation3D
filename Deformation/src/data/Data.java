@@ -2,8 +2,6 @@ package data;
 
 import java.util.ArrayList;
 
-import controller.DataListener;
-
 public abstract class Data {
 	private ArrayList<DataListener> interactiveListeners = new ArrayList<DataListener>();
 	private ArrayList<DataListener> logicListeners = new ArrayList<DataListener>();

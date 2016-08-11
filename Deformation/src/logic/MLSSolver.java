@@ -73,10 +73,13 @@ public class MLSSolver {
 	}
 
 	public void calculateNewImage(ArrayList<Vertex> out, ArrayList<ControlPoint> out_control){
+      System.out.println("+*+ENTRAAAAAAA");
 	  if(out_control.size() < 4) return;
 	  int counter = 0;
 	  for(Vertex vertex : out){
-	    double sum_weights = 0;
+		PVector i = vertex.getPos().copy();	  
+    	System.out.println("--ENTRAAAAAAA  Vec: " + i );
+		double sum_weights = 0;
 	    PVector sum_weights_per_q = new PVector(0,0,0);
 	    PVector q_star;
 	    for(int k = 0; k < out_control.size(); k++){
@@ -99,6 +102,11 @@ public class MLSSolver {
 	    }
 	    PVector f_a_v = PVector.add(sum_A_q_j, q_star);
 	    vertex.setPos(f_a_v);
+    	System.out.println("--ENTRAAAAAAA");
+	    if(!i.equals(vertex.getPos())){
+	    	System.out.println("--or : " + i);
+	    	System.out.println("--df : " + vertex.getPos());
+	    }
 	    counter++;
 	  }
 	}

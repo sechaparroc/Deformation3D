@@ -175,6 +175,17 @@ public class Utilities {
 	    }
 	  }
 	}
+	
+	public static Vec getPointUnderPixel(Scene scene, float x, float y){
+		  return scene.pointUnderPixel(new Point(x, y));
+	}
+	
+	//Get point under pixel and transform it to   
+	public static Vec getPointUnderPixel(InteractiveFrame f, float x, float y){
+		  Vec pup = f.scene().pointUnderPixel(new Point(x, y));
+		  return pup == null ? null : f.coordinatesOf(pup);
+	}
+	
 
 	public static void cloneWithTexture(InteractiveFrame f, PShape p, String texture){
 	  PApplet ap = ((Scene) f.scene()).pApplet();

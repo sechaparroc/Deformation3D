@@ -57,8 +57,29 @@ public class Deformation extends PApplet{
 	  //setup the scene
 	  setupScene();
 	  println(shape.getOriginal_fig().shape().getChildCount());
+	  
+	  print(testing("sdaf", "asdf", "2s24s"));
+	  print(testing("sdaf"));
+	  print(testing());
+	  
+	  
+	  
 	}
 
+	public ArrayList<String> testing(String...strings){
+		return new ArrayList<String>(Arrays.asList(strings));
+	}
+	
+	public void print(ArrayList<String> s){
+		System.out.println("--------------- test------------------");
+		if(s.isEmpty()) System.out.println("Array is empty");
+		for(String ss : s){
+			System.out.println(ss);
+		}
+		System.out.println("--------------- test------------------");
+	}
+	
+	
 	public void draw() { 
 	  ambientLight(80, 80, 80);
 	  directionalLight(255, 255, 255, 0, 0, -1);

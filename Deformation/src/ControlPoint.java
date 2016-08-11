@@ -47,7 +47,7 @@ public class ControlPoint extends InteractiveFrame{
 	setGroup(control_points);
     B = new Vec(0,0,0); radius = RADIUS_POINT;  
     this.translate(A);
-    this.disableHighlighting();
+    this.setHighlightingMode(HighlightingMode.NONE);
     setupProfile();	    
   }
   

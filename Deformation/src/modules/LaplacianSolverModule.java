@@ -13,8 +13,8 @@ public class LaplacianSolverModule extends Module{
 	
 	private LaplacianSolver solver;
 	private ArrayList<ControlPoint> controlPoints;
-	private ArrayList<Vertex> input;
-	private ArrayList<Vertex> output;
+	private Mesh input;
+	private Mesh output;
 
 	public LaplacianSolverModule() {
 		super();
@@ -28,13 +28,13 @@ public class LaplacianSolverModule extends Module{
 	public LaplacianSolverModule(Mesh mesh){
 		this();
 		processInput(mesh);
-		solver.setup(input);
+		solver.setup(input.getVertices());
 	}
 
 	public void addControlPoint(ControlPoint cp){
 		controlPoints.add(cp);
 		 // TODO Very inefficient: Just update the Row 
-		solver.addAnchor(input, cp);
+		solver.addAnchor(input.getVertices(), cp);
 	}
 
 	public void removeControlPoint(ControlPoint cp){
@@ -52,7 +52,7 @@ public class LaplacianSolverModule extends Module{
 	
 	@Override
 	public void executeEvent(Event event) {
-		if(event.containsKey("POINT")){
+		if(event.containsKey("DATA_CONTROL_POINT")){
 			if(event.getName().equalsIgnoreCase("TRANSLATE_A")){
 				state.put("RESET_ANCHORS", true);
 				state.put("EXECUTE", true);
@@ -62,12 +62,12 @@ public class LaplacianSolverModule extends Module{
 				state.put("EXECUTE", true);
 			}
 			else if(event.getName().equalsIgnoreCase("ADD")){
-				controlPoints.add((ControlPoint) event.getData("POINT"));
+				controlPoints.add((ControlPoint) event.getData("DATA_CONTROL_POINT"));
 				state.put("UPDATE", true);
 				state.put("EXECUTE", true);
 			}
 			else if(event.getName().equalsIgnoreCase("REMOVE")){
-				controlPoints.remove(event.getData("POINT"));
+				controlPoints.remove(event.getData("DATA_CONTROL_POINT"));
 				state.put("UPDATE", true);
 				state.put("EXECUTE", true);
 			}
@@ -77,14 +77,14 @@ public class LaplacianSolverModule extends Module{
 	@Override
 	public void processOutput() {
 		if(state.get("UPDATE")){
-			solver.addAnchors(input, controlPoints, true);
+			solver.addAnchors(input.getVertices(), controlPoints, true);
 		}
 		if(state.get("EXECUTE")){
-			solver.solveLaplacian(output);
+			solver.solveLaplacian(output.getVertices());
 			if(state.get("INLINE")) input = output;
 			/*Send event*/
 			Event event = new Event("VERTICES_MODIFIED");
-			event.addData("VERTICES", output);
+			event.addData("DATA_MESH", output);
 			addResponse(event);
 		}
 		/*set to false the flags again*/
@@ -93,15 +93,15 @@ public class LaplacianSolverModule extends Module{
 	}
 
 	public void processInput(Mesh mesh) {
-		input = mesh.getVertices();
+		input = mesh;
 	}
 
-	public ArrayList<Vertex> getOutput() {
+	public Mesh getOutput() {
 		return output;
 	}
 
-	public void setOutput(ArrayList<Vertex> vertices_output) {
-		this.output = vertices_output;
+	public void setOutput(Mesh output) {
+		this.output = output;
 	}
 
 }

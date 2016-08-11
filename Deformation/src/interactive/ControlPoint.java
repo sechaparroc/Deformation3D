@@ -4,6 +4,7 @@ import processing.core.PConstants;
 import processing.core.PShape;
 import remixlab.bias.event.ClickEvent;
 import remixlab.bias.event.DOF2Event;
+import remixlab.dandelion.core.GenericFrame;
 import remixlab.dandelion.geom.Frame;
 import remixlab.dandelion.geom.Vec;
 import remixlab.proscene.InteractiveFrame;
@@ -17,19 +18,16 @@ import remixlab.proscene.Scene;
 public class ControlPoint extends Interactive{
 
   public class Image extends InteractiveFrame{
-	public Image(Scene scn) {
+	public Image(Scene scn, GenericFrame reference) {
 		super(scn);
-		this.setReferenceFrame(ControlPoint.this);
-	    updateShape();
+		this.setReferenceFrame(reference);
+	    this.setHighlightingMode(HighlightingMode.NONE);
+		updateShape();
   	    setMotionBinding(MouseAgent.LEFT_ID, "translate");
 
 	}
 	public void updateShape(){
-		  //this.loca
 		  Vec aux = coordinatesOf(referenceFrame().position());
-		  System.out.println("aux : " + aux);
-		  System.out.println("aux : " + aux);
-		  
 		  PShape line = scene().pApplet().createShape(PConstants.LINE, 0,0,0, aux.x(), aux.y(), aux.z());
 		  line.setStroke(scene().pApplet().color(255,255,255));
 		  PShape p = scene().pApplet().createShape(PConstants.BOX, radius, radius, radius);
@@ -42,10 +40,13 @@ public class ControlPoint extends Interactive{
 	  public void translate(DOF2Event e){
 		  super.translate(e);
 		  updateShape();
-		  if(e.flushed()) notifyAllListeners("TRANSLATE_B");
-		  
+		  if(e.flushed()) ControlPoint.this.notifyAllListeners("TRANSLATE_B");
 	  }
-
+	  /*
+	   * TODO: When Rotation notify Translate B
+	   * Modify Rotation to translate according to Reference Frame
+	   * */
+	  
   }
 	
   public static float RADIUS_POINT = 15;
@@ -69,7 +70,7 @@ public class ControlPoint extends Interactive{
   private void initialSetup(Vec A){
 	radius = RADIUS_POINT;  
     this.translate(A);
-    this.disableHighlighting();
+    this.setHighlightingMode(HighlightingMode.NONE);
     setupProfile();	    
   }
   
@@ -94,12 +95,13 @@ public class ControlPoint extends Interactive{
     super(sc);    
     initialSetup(A);	    
     radius = r;
+    setupProfile();
   }
 
   public ControlPoint(Scene sc, Vec A, Vec f){
     super(sc);    
     initialSetup(A);
-    B = new Image(sc);
+    B = new Image(sc, this);
     B.translate(f); radius = RADIUS_POINT;
     setupProfile();
   }
@@ -107,19 +109,20 @@ public class ControlPoint extends Interactive{
   public ControlPoint(Scene sc, Vec A, Vec f, float r){
     super(sc);    
     initialSetup(A);	    
-    B = new Image(sc);
+    B = new Image(sc, this);
     B.translate(f); radius = RADIUS_POINT;
     setupProfile();
   }
 
   public void remove(ClickEvent event) {
       scene().inputHandler().removeGrabber(this);
+      if(B != null) scene().inputHandler().removeGrabber(B);
       notifyAllListeners("REMOVE");
   }
 
   public void performTranslation(DOF2Event event) {
 	  if(event.fired() && B == null){
-		B = new Image(this.scene());
+		B = new Image(this.scene(), this);
 		translateImage = true;
 	  }
 	  
@@ -130,7 +133,7 @@ public class ControlPoint extends Interactive{
 		  translateImage(event);
 	  }
 	  
-	  if(event.flushed()){
+	  if(event.flushed() && translateImage){
 		  translateImage = false;
 	  }
 	  else if(event.flushed() && !translateImage) notifyAllListeners("TRANSLATE_A");
@@ -147,11 +150,12 @@ public class ControlPoint extends Interactive{
 	  setShape(p);
   }
   
-  public void drawShape(){
-	  this.draw();
+  public void draw(){
+	  super.draw();
 	  if(B != null) B.draw();
   }
 
+  
 	@Override
 	protected void setEvents() {
 		events.add("TRANSLATE_A");

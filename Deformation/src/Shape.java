@@ -8,6 +8,7 @@ import processing.core.PConstants;
 import remixlab.dandelion.geom.Point;
 import remixlab.dandelion.geom.Vec;
 import remixlab.proscene.InteractiveFrame;
+import remixlab.proscene.InteractiveFrame.HighlightingMode;
 import remixlab.proscene.Scene;
 
 public class Shape {
@@ -87,8 +88,8 @@ public class Shape {
 	    laplacianDeformation.calculateLaplacian();
 	    //set default solver to be used
 	    solver = Solver.MLS;
-	    original_fig.disableHighlighting();
-	    deformed_fig.disableHighlighting();
+	    original_fig.setHighlightingMode(HighlightingMode.NONE);
+	    deformed_fig.setHighlightingMode(HighlightingMode.NONE);
 	}
 	
 	public void draw(){

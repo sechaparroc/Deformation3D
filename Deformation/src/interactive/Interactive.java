@@ -2,7 +2,7 @@ package interactive;
 
 import java.util.ArrayList;
 
-import controller.InteractiveListener;
+import modules.InteractiveListener;
 import processing.core.PShape;
 import remixlab.dandelion.core.Eye;
 import remixlab.dandelion.core.GenericFrame;

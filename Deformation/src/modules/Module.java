@@ -1,11 +1,13 @@
 package modules;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Map;
 
 
 public abstract class Module implements ModuleListener<Module>{
-	public static class Event{
+	public class Event{
 		private String name;
 		private HashMap<String, Object> data;
 
@@ -34,17 +36,22 @@ public abstract class Module implements ModuleListener<Module>{
 			return data.get(key);
 		}
 		
+		public String toString(){
+			return "Event: \n \t name : " + name + "\n \t data" + data;
+		}
 	}
 
-	/*Suscribers to this module*/
-	private ArrayList<ModuleListener<? extends Module>> listeners;
+	/*Subscribes to this module according to its attributes*/
+	private HashMap<ModuleListener<? extends Module>, ArrayList<Object>> listeners;
+
 	/*Queue to retain the events*/
 	protected ArrayList<Event> events;
-	protected ArrayList<Event> response;
+	protected HashMap<Event, ArrayList<Object>> response;
 
 	
 	public Module(){
-		listeners = new ArrayList<ModuleListener<? extends Module>>();
+		listeners = new HashMap<ModuleListener<? extends Module>, ArrayList<Object>>();
+		response = new HashMap<Event,ArrayList<Object>>();
 		events = new ArrayList<Event>();
 	}
 	
@@ -58,6 +65,8 @@ public abstract class Module implements ModuleListener<Module>{
 		while(!events.isEmpty()){
 			Event event = events.get(0);
 			executeEvent(event);
+			System.out.println("Class " + this);
+			System.out.println(event.toString());
 			events.remove(0);
 		}
 		/*Override this method to indicate which output send*/
@@ -69,32 +78,41 @@ public abstract class Module implements ModuleListener<Module>{
 	public abstract void executeEvent(Event event);
 	public abstract void processOutput();
 	
-	public void attachTo(Module module){
-		module.attachModuleListener(this);
+	public void attachTo(Module module, Object... objs){
+		module.attachModuleListener(this, objs);
 	}
 	
-	public void remove(ModuleListener<? extends Module> module){
-		this.listeners.remove(module);
-	}
 	
-	public void attachModuleListener(ModuleListener<? extends Module> listener){
-		listeners.add(listener);
+	public void attachModuleListener(ModuleListener<? extends Module> listener, Object objs[]){
+		ArrayList<Object> objects = new ArrayList<Object>(Arrays.asList(objs));
+		listeners.put(listener, objects);
 	}
 
 	public void removehModuleListener(ModuleListener<? extends Module> listener){
-		listeners.remove(listener);
+		this.listeners.remove(listener);
 	}
 	
 	public void notifyModules(){
-		for(ModuleListener<? extends Module> listener : listeners){
-			for(Event event : response){
-				listener.listen(event);
+		for(Map.Entry<Event,ArrayList<Object>> response_entry : response.entrySet()){
+			for(Map.Entry<ModuleListener<? extends Module>, ArrayList<Object>> listeners_entry : listeners.entrySet()){
+				if(response_entry.getValue().isEmpty() || listeners_entry.getValue().isEmpty()){
+					listeners_entry.getKey().listen(response_entry.getKey());
+					continue;
+				}
+				for(Object obj : response_entry.getValue()){
+					if(listeners_entry.getValue().contains(obj)){
+						listeners_entry.getKey().listen(response_entry.getKey());
+						break;
+					}
+				}
 			}
 		}
+		/*clear response*/
+		response.clear();
 	}
 	
-	public void addResponse(Event e){
-		response.add(e);
+	public void addResponse(Event e, Object... objs){
+		ArrayList<Object> objects = new ArrayList<Object>(Arrays.asList(objs));
+		response.put(e, objects);
 	}
-	
 }

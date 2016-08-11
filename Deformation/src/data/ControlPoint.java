@@ -1,11 +1,16 @@
 package data;
 
-import controller.DataListener;
 import processing.core.PVector;
 
 public class ControlPoint extends Data{
 	private PVector A;
 	private PVector B;
+
+	public ControlPoint(PVector A){
+		this.A = A;
+		this.B = new PVector(0,0,0);
+	}
+	
 	
 	public ControlPoint(PVector A, PVector B){
 		this.A = A;
