@@ -1,26 +1,17 @@
 # Deformation3D
-Implementation of Affine deformations using MLS in processing (3D).
+Implementation of different deformation methods (3D) using Processing and Proscene.
 
-Affine Tranformations using MLS
+Affine Transformations using MLS and Rigid Transformations using Laplacian Operator
 
-This is an implementation in Processing of affine transformations using the method proposed on: http://www.cs.rice.edu/~jwarren/research/mls.pdf
+This is an implementation in Processing of:
 
-So, the idea is that a mesh (.obj model) is loaded and, basically, you can add, remove and traslate control points and drag them to generate their
-new positions, deformating the shape of the image as Schaefer proposed.
+* Affine transformations using MLS as is proposed on: 
+  http://www.cs.rice.edu/~jwarren/research/mls.pdf
+* Rigid transformations using Laplacian coordinates as is proposed on:
+  https://igl.ethz.ch/projects/Laplacian-mesh-processing/Laplacian-mesh-editing/laplacian-mesh-editing.pdf
 
-The Scene that is shown is comopsed by two models, one is the representation of the original model, the other one is going to show the deformations
-applied to the model according to the handler points.
+So, the idea is that a mesh (.obj model) is loaded and, basically, you can add, remove and traslate control points and drag them to deform the shape.
 
-There are two main dependences:  
+The Scene that is shown is composed by two models, one is the representation of the original model, the other one is going to show the deformations suffered by the model according to the handler points.
 
-- Papaya: Provides useful matrices functions. Used in this very first approach just to obtain the inverse of the affine matrix.
-- ProScene: Library very useful to draw complex scenes.
-
-In this very first approach, we use the function PointUnderPixel provides by the class Scene in order to locate a control point in
-the scene, so control points are going to be added only if there's a pixel with information below the cursor.
-
-Use the key 'c' to enable or disable the add point functionality (disable it when you want to rotate the models).
-Use the key 'r' to enable or disable a bounding box over the original shape.
-
-A next version will consider rigid transformations (Disabling transformations such as shear and keeping translation, rotation and scaling) 
-and will take advantage of the info provide by the connectivity mesh using Laplacian Coordinates.
+DEMO: http://nakednous.github.io/proscene3_design/vid/deformation.mp4
